@@ -1,7 +1,7 @@
 class ModelWrapper(object):
-    '''
+    """
     This class wraps all modules and implements train, validation, test and inference methods
-    '''
+    """
 
     def __init__(self) -> None:
         pass
