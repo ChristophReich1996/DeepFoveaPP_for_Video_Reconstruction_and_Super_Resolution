@@ -1,8 +1,9 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from modules.modulated_deform_conv import ModulatedDeformConvPack
 
 
 class RecurrentUNet(nn.Module):
@@ -13,11 +14,12 @@ class RecurrentUNet(nn.Module):
     def __init__(self,
                  channels_encoding: Tuple[Tuple[int, int]] = ((3, 32), (32, 64), (64, 128), (128, 128), (128, 128)),
                  channels_decoding: Tuple[Tuple[int, int]] = ((384, 128), (384, 128), (256, 64), (128, 32)),
-                 channels_final_block: Tuple[Tuple[int, int]] = ((32, 32), (32, 3))) -> None:
+                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((64, 16), (48, 3))) -> None:
         """
         Constructor method
         :param channels_encoding: (Tuple[Tuple[int, int]]) In and out channels in each encoding path
         :param channels_decoding: (Tuple[Tuple[int, int]]) In and out channels in each decoding path
+        :param channels_super_resolution_blocks: (Tuple[Tuple[int, int]]) In and out channels in each s.r. block
         """
         # Call super constructor
         super(RecurrentUNet, self).__init__()
@@ -30,8 +32,12 @@ class RecurrentUNet(nn.Module):
         self.decoder_blocks = nn.ModuleList()
         for channel in channels_decoding:
             self.decoder_blocks.append(TemporalBlock(in_channels=channel[0], out_channels=channel[1]))
+        # Init super-resolution blocks
+        self.super_resolution_blocks = nn.ModuleList()
+        for channel in channels_super_resolution_blocks:
+            self.super_resolution_blocks.append(SuperResolutionBlock(in_channels=channel[0], out_channels=channel[1]))
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input: torch.Tensor) -> List[torch.Tensor]:
         """
         Forward pass
         :param input: (torch.Tensor) Input frame
@@ -50,11 +56,20 @@ class RecurrentUNet(nn.Module):
             if index == 0:
                 output = decoder_block(
                     torch.cat(
-                        (F.upsample(input, scale_factor=2, mode='bilinear'), encoder_activations[-(index + 1)]), dim=1))
+                        (F.interpolate(input, scale_factor=2, mode='bilinear', align_corners=False),
+                         encoder_activations[-(index + 1)]), dim=1))
             # Normal case
             else:
                 output = decoder_block(torch.cat((output, encoder_activations[-(index + 1)]), dim=1))
-        return output
+        # Init list for super resolution images
+        super_resolution_images = []
+        # Forward pass of the super resolution blocks
+        for index, super_resolution_block in enumerate(self.super_resolution_blocks):
+            output, image = super_resolution_block(
+                torch.cat((output, F.interpolate(encoder_activations[0], size=output.shape[2:], mode='bilinear',
+                                                 align_corners=False)), dim=1))
+            super_resolution_images.append(image)
+        return super_resolution_images
 
 
 class ResidualBlock(nn.Module):
@@ -122,7 +137,7 @@ class TemporalBlock(nn.Module):
         self.residual_mapping = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
                                           kernel_size=(1, 1), padding=(0, 0), stride=(1, 1), bias=True)
         # Init upsampling layer
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         # Init previous activation
         self.previous_activation = None
 
@@ -143,6 +158,8 @@ class TemporalBlock(nn.Module):
         # Init layer norm with shape of input if needed
         if self.layer_norm is None:
             self.layer_norm = nn.LayerNorm(output.shape[1:], elementwise_affine=True)
+            # Layer to device
+            self.layer_norm.to(self.convolution_1.weight.device)
         # Perform layer norm
         output = self.layer_norm(output)
         # Save activation as previous activation
@@ -157,9 +174,61 @@ class TemporalBlock(nn.Module):
         return output
 
 
+class SuperResolutionBlock(nn.Module):
+    """
+    This class implements a super resolution block which is used after the original recurrent U-Net
+    """
+
+    def __init__(self, in_channels: int, out_channels: int, final_output_channels: int = 3) -> None:
+        """
+        Constructor method
+        :param in_channels: (int) Number of input channels
+        :param out_channels: (int) Number of output channels
+        :param final_output_channels: (int) Number of output channels for the mapping to image space
+        """
+        # Call super constructor
+        super(SuperResolutionBlock, self).__init__()
+        # Init layers
+        self.layers = nn.Sequential(
+            ModulatedDeformConvPack(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3),
+                                    padding=(1, 1), stride=(1, 1), bias=True),
+            nn.ELU(),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            ModulatedDeformConvPack(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3),
+                                    padding=(1, 1), stride=(1, 1), bias=True),
+            nn.ELU(),
+        )
+        # Init residual mapping
+        self.residual_mapping = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(1, 1),
+                      padding=(0, 0), stride=(1, 1), bias=True),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        )
+
+        # Init output layer
+        self.output_layer = ModulatedDeformConvPack(in_channels=out_channels, out_channels=final_output_channels,
+                                                    kernel_size=(1, 1), padding=(0, 0), stride=(1, 1), bias=True)
+
+    def forward(self, input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Forward pass
+        :param input: (torch.Tensor)
+        :return: (Tuple[torch.Tensor, torch.Tensor]) First, output tensor of main convolution. Second, image output
+        """
+        # Perform main layers
+        output = self.layers(input)
+        # Perform residual mapping
+        output = output + self.residual_mapping(input)
+        # Make image output
+        image = self.output_layer(output)
+        return output, image
+
+
 if __name__ == '__main__':
-    unet = RecurrentUNet()
+    unet = RecurrentUNet().cuda()
     print(sum([p.numel() for p in unet.parameters()]))
-    output = unet(torch.rand(1, 3, 256, 256))
-    print(output.shape)
+    with torch.no_grad():
+        output = unet(torch.rand(1, 3, 256, 256).cuda())
+    print(output[0].shape)
+    print(output[1].shape)
     exit(22)

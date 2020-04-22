@@ -1,2 +1,4 @@
 torch>=1.3.1
+torchvision>=0.4.2
 git+https://github.com/jonbarron/robust_loss_pytorch
+git+https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch/tree/pytorch_1.0.0
