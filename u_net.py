@@ -24,18 +24,25 @@ class RecurrentUNet(nn.Module):
         # Call super constructor
         super(RecurrentUNet, self).__init__()
         # Init decoder blocks
-        self.encoder_blocks = nn.ModuleList()
+        self.encoder_blocks: nn.ModuleList[ResidualBlock] = nn.ModuleList()
         for channel in channels_encoding:
             self.encoder_blocks.append(
                 ResidualBlock(in_channels=channel[0], out_channels=channel[1]))
         # Init decoder blocks
-        self.decoder_blocks = nn.ModuleList()
+        self.decoder_blocks: nn.ModuleList[TemporalBlock] = nn.ModuleList()
         for channel in channels_decoding:
             self.decoder_blocks.append(TemporalBlock(in_channels=channel[0], out_channels=channel[1]))
         # Init super-resolution blocks
-        self.super_resolution_blocks = nn.ModuleList()
+        self.super_resolution_blocks: nn.ModuleList[SuperResolutionBlock] = nn.ModuleList()
         for channel in channels_super_resolution_blocks:
             self.super_resolution_blocks.append(SuperResolutionBlock(in_channels=channel[0], out_channels=channel[1]))
+
+    def reset_recurrent_tensor(self) -> None:
+        """
+        Method resets the recurrent tensor which gets set by calling forward again
+        """
+        for block in self.decoder_blocks:
+            block.reset_recurrent_tensor()
 
     def forward(self, input: torch.Tensor) -> List[torch.Tensor]:
         """
@@ -44,7 +51,7 @@ class RecurrentUNet(nn.Module):
         :return: (torch.Tensor) Super resolution output frame
         """
         # Init list to store encoder outputs
-        encoder_activations = []
+        encoder_activations: List[torch.Tensor] = []
         # Forward pass of encoder blocks
         for index, encoder_block in enumerate(self.encoder_blocks):
             input = encoder_block(input)
@@ -62,7 +69,7 @@ class RecurrentUNet(nn.Module):
             else:
                 output = decoder_block(torch.cat((output, encoder_activations[-(index + 1)]), dim=1))
         # Init list for super resolution images
-        super_resolution_images = []
+        super_resolution_images: List[torch.Tensor] = []
         # Forward pass of the super resolution blocks
         for index, super_resolution_block in enumerate(self.super_resolution_blocks):
             output, image = super_resolution_block(
@@ -139,6 +146,12 @@ class TemporalBlock(nn.Module):
         # Init upsampling layer
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         # Init previous activation
+        self.previous_activation = None
+
+    def reset_recurrent_tensor(self) -> None:
+        """
+        Method resets the recurrent tensor which gets set by calling forward again
+        """
         self.previous_activation = None
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
