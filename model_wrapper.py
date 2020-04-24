@@ -46,7 +46,7 @@ class ModelWrapper(object):
         # Init logger
         self.logger = misc.Logger()
         # Make directories to save logs, plots and models during training
-        '''
+        # Not compatible with windows!!!
         time_and_date = str(datetime.now())
         self.path_save_models = os.path.join(save_data_path, 'models_' + time_and_date)
         if not os.path.exists(self.path_save_models):
@@ -57,7 +57,6 @@ class ModelWrapper(object):
         self.path_save_metrics = os.path.join(save_data_path, 'metrics_' + time_and_date)
         if not os.path.exists(self.path_save_metrics):
             os.makedirs(self.path_save_metrics)
-        '''
         # Log hyperparameter
         self.logger.hyperparameter['generator_network'] = str(generator_network)
         self.logger.hyperparameter['discriminator_network'] = str(discriminator_network)
@@ -75,7 +74,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['generator_loss'] = str(generator_loss)
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
-    def train(self, epochs: int = 1) -> None:
+    def train(self, epochs: int = 1, save_models_after_n_epochs: int = 4, validate_after_n_epochs: int = 4) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -178,8 +177,32 @@ class ModelWrapper(object):
                     'SV Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFTG. Loss={:.4f}, Adv. FFTD. Loss={:.4f}'
                         .format(loss_supervised.item(), loss_generator.item(), loss_discriminator.item(),
                                 loss_fft_generator.item(), loss_fft_discriminator.item()))
-                self.progress_bar.clear()
-                exit(22)
+                # Log losses
+                self.logger.log(metric_name='training_iteration', value=self.progress_bar.n)
+                self.logger.log(metric_name='epoch', value=epoch)
+                self.logger.log(metric_name='loss_supervised', value=loss_supervised)
+                self.logger.log(metric_name='loss_generator', value=loss_generator)
+                self.logger.log(metric_name='loss_discriminator', value=loss_discriminator)
+                self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator)
+                self.logger.log(metric_name='loss_fft_discriminator', value=loss_fft_discriminator)
+            # Save models and optimizer
+            if epoch % save_models_after_n_epochs == 0:
+                # Save models
+                torch.save(self.generator_network.state_dict(), 'generator_network_{}.pt'.format(epoch))
+                torch.save(self.discriminator_network.state_dict(), 'discriminator_network_{}.pt'.format(epoch))
+                torch.save(self.fft_discriminator_network.state_dict(), 'fft_discriminator_network_{}.pt'.format(epoch))
+                # Save optimizers
+                torch.save(self.generator_network_optimizer, 'generator_network_optimizer_{}.pt'.format(epoch))
+                torch.save(self.discriminator_network_optimizer, 'discriminator_network_optimizer_{}.pt'.format(epoch))
+                torch.save(self.fft_discriminator_network_optimizer,
+                           'fft_discriminator_network_optimizer_{}.pt'.format(epoch))
+            if epoch % validate_after_n_epochs == 0:
+                # Validation
+                pass
+            # Save logs
+            self.logger.save_metrics(self.path_save_metrics)
+        # Close progress bar
+        self.progress_bar.close()
 
     def validate(self) -> None:
         pass
