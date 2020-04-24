@@ -40,3 +40,36 @@ class Logger(object):
             values = torch.tensor(values)
             # Save values
             torch.save(values, os.path.join(path, '{}.pt'.format(metric_name)))
+
+def psnr(prediction: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+    """
+    Function computes the Peak Signal to Noise Ratio
+    PSNR = 10 * log10(max[y]**2 / MSE(y, y'))
+    Source: https://github.com/ChristophReich1996/CellFlowNet
+    :param prediction: (torch.Tensor) Prediction
+    :param label: (torch.Tensor) Label
+    :return: (torch.Tensor) PSNR value
+    """
+    assert prediction.numel() == label.numel(), 'Prediction tensor and label tensor must have the number of elements'
+    return 10.0 * torch.log10(prediction.max() ** 2 / (torch.mean((prediction - label) ** 2) + 1e-08))
+
+
+def ssim(prediction: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+    """
+    Function computes the structural similarity
+    SSMI = 10 * log10(max[y]**2 / MSE(y, y'))
+    Source: https://github.com/ChristophReich1996/CellFlowNet
+    :param prediction: (torch.Tensor) Prediction
+    :param label: (torch.Tensor) Label
+    :return: (torch.Tensor) SSMI value
+    """
+    assert prediction.numel() == label.numel(), 'Prediction tensor and label tensor must have the number of elements'
+    # Calc means and vars
+    prediction_mean = prediction.mean()
+    prediction_var = prediction.var()
+    label_mean = label.mean()
+    label_var = label.var()
+    # Calc correlation coefficient
+    correlation_coefficient = (1 / label.numel()) * torch.sum((prediction - prediction_mean) * (label - label_mean))
+    return ((2.0 * prediction_mean * label_mean) * (2.0 * correlation_coefficient)) / \
+           ((prediction_mean ** 2 + label_mean ** 2) * (prediction_var + label_var))
