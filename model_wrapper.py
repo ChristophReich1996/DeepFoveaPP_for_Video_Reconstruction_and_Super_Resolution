@@ -26,6 +26,25 @@ class ModelWrapper(object):
                  generator_loss: nn.Module = lossfunction.WassersteinGeneratorLoss(),
                  discriminator_loss: nn.Module = lossfunction.WassersteinDiscriminatorLoss(), device='cuda',
                  save_data_path: str = 'saved_data') -> None:
+        """
+        Constructor method
+        :param generator_network: (nn.Module) Generator models
+        :param discriminator_network: (nn.Module) Discriminator model
+        :param fft_discriminator_network: (nn.Module) FFT discriminator model
+        :param vgg_19: (nn.Module) Pre-trained VGG19 network
+        :param generator_network_optimizer: (torch.optim.Optimizer) Generator optimizer module
+        :param discriminator_network_optimizer: (torch.optim.Optimizer) Discriminator optimizer
+        :param fft_discriminator_network_optimizer: (torch.optim.Optimizer) FFT discriminator model
+        :param training_dataloader: (DataLoader) Training dataloader including the training dataset
+        :param validation_dataloader: (DataLoader) Validation dataloader including the validation dataset
+        :param test_dataloader: (DataLoader) Test dataloader including the test dataset
+        :param loss_function: (nn.Module) Main supervised loss function
+        :param perceptual_loss: (nn.Module) Perceptual loss function which takes two lists of tensors as input
+        :param generator_loss: (nn.Module) Adversarial generator loss function
+        :param discriminator_loss: (nn.Module) Adversarial discriminator loss function
+        :param device: (str) Device to be utilized (cpu not available if deformable convolutions are utilized)
+        :param save_data_path: (str) Path to store logs, models and plots
+        """
         # Save arguments
         self.generator_network = generator_network
         self.discriminator_network = discriminator_network
@@ -80,6 +99,8 @@ class ModelWrapper(object):
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
         Multiple forward passes are needed -> Slower training. Additionally gradients are not as smooth.
         :param epochs: (int) Number of epochs to perform
+        :param save_models_after_n_epochs: (int) Epochs after models and optimizers gets saved
+        :param validate_after_n_epochs: (int) Perform validation after a given number of epochs
         """
         # Model into training mode
         self.generator_network.train()
