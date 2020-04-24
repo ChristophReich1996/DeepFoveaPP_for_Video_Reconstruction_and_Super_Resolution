@@ -10,7 +10,7 @@ class AdaptiveRobustLoss(nn.Module):
     This class implements the adaptive robust loss function proposed by Jon Barron for image tensors
     """
 
-    def __init__(self, device: str = 'cuda', num_of_dimension: int = 1920 * 1080 * 3) -> None:
+    def __init__(self, device: str = 'cuda:0', num_of_dimension: int = 1920 * 1080 * 3) -> None:
         """
         Constructor method
         """

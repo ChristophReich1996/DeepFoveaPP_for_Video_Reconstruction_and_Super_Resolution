@@ -12,9 +12,10 @@ class RecurrentUNet(nn.Module):
     """
 
     def __init__(self,
-                 channels_encoding: Tuple[Tuple[int, int]] = ((3, 32), (32, 64), (64, 128), (128, 128), (128, 128)),
+                 channels_encoding: Tuple[Tuple[int, int]] = (
+                         (3 * 16, 32), (32, 64), (64, 128), (128, 128), (128, 128)),
                  channels_decoding: Tuple[Tuple[int, int]] = ((384, 128), (384, 128), (256, 64), (128, 32)),
-                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((64, 16), (48, 3))) -> None:
+                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((64, 16), (48, 3 * 16))) -> None:
         """
         Constructor method
         :param channels_encoding: (Tuple[Tuple[int, int]]) In and out channels in each encoding path
@@ -24,16 +25,16 @@ class RecurrentUNet(nn.Module):
         # Call super constructor
         super(RecurrentUNet, self).__init__()
         # Init decoder blocks
-        self.encoder_blocks: nn.ModuleList[ResidualBlock] = nn.ModuleList()
+        self.encoder_blocks = nn.ModuleList()
         for channel in channels_encoding:
             self.encoder_blocks.append(
                 ResidualBlock(in_channels=channel[0], out_channels=channel[1]))
         # Init decoder blocks
-        self.decoder_blocks: nn.ModuleList[TemporalBlock] = nn.ModuleList()
+        self.decoder_blocks = nn.ModuleList()
         for channel in channels_decoding:
             self.decoder_blocks.append(TemporalBlock(in_channels=channel[0], out_channels=channel[1]))
         # Init super-resolution blocks
-        self.super_resolution_blocks: nn.ModuleList[SuperResolutionBlock] = nn.ModuleList()
+        self.super_resolution_blocks = nn.ModuleList()
         for channel in channels_super_resolution_blocks:
             self.super_resolution_blocks.append(SuperResolutionBlock(in_channels=channel[0], out_channels=channel[1]))
 
@@ -51,7 +52,7 @@ class RecurrentUNet(nn.Module):
         :return: (torch.Tensor) Super resolution output frame
         """
         # Init list to store encoder outputs
-        encoder_activations: List[torch.Tensor] = []
+        encoder_activations = []
         # Forward pass of encoder blocks
         for index, encoder_block in enumerate(self.encoder_blocks):
             input = encoder_block(input)
@@ -69,7 +70,7 @@ class RecurrentUNet(nn.Module):
             else:
                 output = decoder_block(torch.cat((output, encoder_activations[-(index + 1)]), dim=1))
         # Init list for super resolution images
-        super_resolution_images: List[torch.Tensor] = []
+        super_resolution_images = []
         # Forward pass of the super resolution blocks
         for index, super_resolution_block in enumerate(self.super_resolution_blocks):
             output, image = super_resolution_block(
@@ -192,7 +193,7 @@ class SuperResolutionBlock(nn.Module):
     This class implements a super resolution block which is used after the original recurrent U-Net
     """
 
-    def __init__(self, in_channels: int, out_channels: int, final_output_channels: int = 3) -> None:
+    def __init__(self, in_channels: int, out_channels: int, final_output_channels: int = 3 * 16) -> None:
         """
         Constructor method
         :param in_channels: (int) Number of input channels
@@ -235,13 +236,3 @@ class SuperResolutionBlock(nn.Module):
         # Make image output
         image = self.output_layer(output)
         return output, image
-
-
-if __name__ == '__main__':
-    unet = RecurrentUNet().cuda()
-    print(sum([p.numel() for p in unet.parameters()]))
-    with torch.no_grad():
-        output = unet(torch.rand(1, 3, 256, 256).cuda())
-    print(output[0].shape)
-    print(output[1].shape)
-    exit(22)
