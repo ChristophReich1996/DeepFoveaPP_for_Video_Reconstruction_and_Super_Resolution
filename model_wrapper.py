@@ -93,7 +93,8 @@ class ModelWrapper(object):
         self.logger.hyperparameter['generator_loss'] = str(generator_loss)
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
-    def train(self, epochs: int = 1, save_models_after_n_epochs: int = 4, validate_after_n_epochs: int = 4) -> None:
+    def train(self, epochs: int = 1, save_models_after_n_epochs: int = 4, validate_after_n_epochs: int = 4,
+              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -101,7 +102,14 @@ class ModelWrapper(object):
         :param epochs: (int) Number of epochs to perform
         :param save_models_after_n_epochs: (int) Epochs after models and optimizers gets saved
         :param validate_after_n_epochs: (int) Perform validation after a given number of epochs
+        :param w_supervised_loss: (float) Weight factor for the supervised loss
+        :param w_adversarial: (float) Weight factor for adversarial generator loss
+        :param w_fft_adversarial: (float) Weight factor for fft adversarial generator loss
         """
+        # Log weights in hyperparameters
+        self.logger.hyperparameter['w_supervised_loss'] = str(w_supervised_loss)
+        self.logger.hyperparameter['w_adversarial'] = str(w_adversarial)
+        self.logger.hyperparameter['w_fft_adversarial'] = str(w_fft_adversarial)
         # Model into training mode
         self.generator_network.train()
         self.discriminator_network.train()
@@ -137,7 +145,7 @@ class ModelWrapper(object):
                 label_reshaped_4d = label.reshape(label.shape[0] * (label.shape[1] // 3), 3, label.shape[2],
                                                   label.shape[3])
                 # Call supervised loss
-                loss_supervised = self.loss_function(prediction, label) \
+                loss_supervised = w_supervised_loss * self.loss_function(prediction, label) \
                                   + self.perceptual_loss(self.vgg_19(prediction_reshaped_4d),
                                                          self.vgg_19(label_reshaped_4d))
                 # Calc gradients
@@ -161,7 +169,7 @@ class ModelWrapper(object):
                 # Calc gradients and retain graph of generator gradients
                 loss_discriminator.backward(retain_graph=True)
                 # Calc generator loss
-                loss_generator = self.generator_loss(self.discriminator_network(prediction_reshaped_5d))
+                loss_generator = w_adversarial * self.generator_loss(self.discriminator_network(prediction_reshaped_5d))
                 # Calc gradients
                 loss_generator.backward()
                 # Optimize generator and discriminator
@@ -184,7 +192,8 @@ class ModelWrapper(object):
                 # Calc gradients and retain graph of generator gradients
                 loss_fft_discriminator.backward(retain_graph=True)
                 # Calc generator loss
-                loss_fft_generator = self.generator_loss(self.fft_discriminator_network(prediction_reshaped_5d))
+                loss_fft_generator = w_fft_adversarial * self.generator_loss(
+                    self.fft_discriminator_network(prediction_reshaped_5d))
                 # Calc gradients
                 loss_fft_generator.backward()
                 # Optimize generator and discriminator
