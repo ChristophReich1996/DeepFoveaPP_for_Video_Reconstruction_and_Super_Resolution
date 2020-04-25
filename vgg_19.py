@@ -24,6 +24,9 @@ class VGG19(nn.Module):
         self.vgg_19_features = nn.ModuleList(list(self.vgg_19_features))
         # Save parameter
         self.indexes_of_layers_to_return_features = indexes_of_layers_to_return_features
+        # Set requires grad of all parameters to false since model is fixed
+        for parameter in self.parameters():
+            parameter.require_grad = False
 
     def forward(self, input: torch.Tensor) -> List[torch.Tensor]:
         """

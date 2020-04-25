@@ -2,6 +2,7 @@ from typing import Tuple
 
 import torch
 from torch.utils.data.dataset import Dataset
+import os
 
 
 class VideoDataset(Dataset):
@@ -9,9 +10,10 @@ class VideoDataset(Dataset):
     This class implements a video dataset for super resolution
     """
 
-    def __init__(self) -> None:
+    def __init__(self, path:str='') -> None:
         """
         Constructor method
+        :param path: (str) Dataset path
         """
         # Call super constructor
         super(VideoDataset, self).__init__()
