@@ -6,10 +6,10 @@ paper by Anton S. Kaplanyan et al. (facebook research).
 
 ## TODO
 
-* Find dataset ([youtube 8M](https://research.google.com/youtube8m/), [cityscapes](https://www.cityscapes-dataset.com/) or [REDS](https://seungjunnah.github.io/Datasets/reds.html))
+* **Done** (REDS ~40GB) Find dataset ([youtube 8M](https://research.google.com/youtube8m/), [cityscapes](https://www.cityscapes-dataset.com/) or [REDS](https://seungjunnah.github.io/Datasets/reds.html))
 * Implement dataset class for chosen dataset
 * **Done** Implement [PSNR](https://en.wikipedia.org/wiki/Peak_signal-to-noise_ratio) and [SSIM](https://en.wikipedia.org/wiki/Structural_similarity)
-* Implement validation method (L1, L2, PSNR and SSIM for validation?)
+* **Done** Implement validation method (L1, L2, PSNR and SSIM)
 * Implement test method
 * Implement inference method
 * Analyse results and HPO if needed ;)

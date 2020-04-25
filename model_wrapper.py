@@ -1,9 +1,12 @@
+from typing import Callable, Union, Tuple
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import os
 from datetime import datetime
 from tqdm import tqdm
+import numpy as np
 
 import lossfunction
 import misc
@@ -210,11 +213,11 @@ class ModelWrapper(object):
                 # Log losses
                 self.logger.log(metric_name='training_iteration', value=self.progress_bar.n)
                 self.logger.log(metric_name='epoch', value=epoch)
-                self.logger.log(metric_name='loss_supervised', value=loss_supervised)
-                self.logger.log(metric_name='loss_generator', value=loss_generator)
-                self.logger.log(metric_name='loss_discriminator', value=loss_discriminator)
-                self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator)
-                self.logger.log(metric_name='loss_fft_discriminator', value=loss_fft_discriminator)
+                self.logger.log(metric_name='loss_supervised', value=loss_supervised.item())
+                self.logger.log(metric_name='loss_generator', value=loss_generator.item())
+                self.logger.log(metric_name='loss_discriminator', value=loss_discriminator.item())
+                self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator.item())
+                self.logger.log(metric_name='loss_fft_discriminator', value=loss_fft_discriminator.item())
             # Save models and optimizer
             if epoch % save_models_after_n_epochs == 0:
                 # Save models
@@ -228,14 +231,51 @@ class ModelWrapper(object):
                            'fft_discriminator_network_optimizer_{}.pt'.format(epoch))
             if epoch % validate_after_n_epochs == 0:
                 # Validation
-                pass
+                self.validate()
+                # Log validation epoch
+                self.logger.log(metric_name='validation_epoch', value=epoch)
             # Save logs
             self.logger.save_metrics(self.path_save_metrics)
         # Close progress bar
         self.progress_bar.close()
 
-    def validate(self) -> None:
-        pass
+    def validate(self,
+                 validation_metrics: Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]
+                 = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim)) -> None:
+        # Generator model to device
+        self.generator_network.cuda()
+        # Generator into eval mode
+        self.generator_network.eval()
+        # Init dict to store metrics
+        metrics = dict()
+        # Main loop
+        for input, label in self.validation_dataloader:
+            # Data to device
+            input = input.to(self.device)
+            label = label.to(self.device)
+            # Make prediction
+            prediction = self.generator_network(input)
+            # Calc validation metrics
+            for validation_metric in validation_metrics:
+                # Calc metric
+                metric = validation_metric(prediction, label)
+                # Case if validation metric is a nn.Module
+                if isinstance(validation_metric, nn.Module):
+                    # Save metric and name of metric
+                    if validation_metric.__class__.__name__ in metrics.keys():
+                        metrics[validation_metric.__class__.__name__].append(metric)
+                    else:
+                        metrics[validation_metric.__class__.__name__] = [metric]
+                # Case if validation metric is a callable function
+                else:
+                    # Save metric and name of metric
+                    if validation_metric.__name__ in metrics.keys():
+                        metrics[validation_metric.__name__].append(metric)
+                    else:
+                        metrics[validation_metric.__name__] = [metric]
+        # Average metrics and save them in logs
+        for metric_name in metrics:
+            self.logger.log(metric_name=metric_name, value=float(np.mean(metrics[metric_name])))
 
     def test(self) -> None:
         pass
