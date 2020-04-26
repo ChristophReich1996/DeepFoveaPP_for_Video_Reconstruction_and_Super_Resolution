@@ -218,7 +218,7 @@ class ModelWrapper(object):
                 self.fft_discriminator_network.zero_grad()
                 # Update progress bar
                 self.progress_bar.set_description(
-                    'SV Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFTG. Loss={:.4f}, Adv. FFTD. Loss={:.4f}'
+                    'SV Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
                         .format(loss_supervised.item(), loss_generator.item(), loss_discriminator.item(),
                                 loss_fft_generator.item(), loss_fft_discriminator.item()))
                 # Log losses
