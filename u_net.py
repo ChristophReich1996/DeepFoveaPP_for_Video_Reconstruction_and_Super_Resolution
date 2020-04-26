@@ -14,8 +14,8 @@ class RecurrentUNet(nn.Module):
     def __init__(self,
                  channels_encoding: Tuple[Tuple[int, int]] = (
                          (3 * 12, 32), (32, 64), (64, 128), (128, 128), (128, 128)),
-                 channels_decoding: Tuple[Tuple[int, int]] = ((384, 128), (384, 128), (256, 64), (128, 32)),
-                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((64, 16), (48, 3 * 12))) -> None:
+                 channels_decoding: Tuple[Tuple[int, int]] = ((384, 128), (384, 128), (256, 64), (112, 16)),
+                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((48, 8), (40, 3 * 12))) -> None:
         """
         Constructor method
         :param channels_encoding: (Tuple[Tuple[int, int]]) In and out channels in each encoding path
@@ -92,10 +92,10 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         # Init main layers
         self.layer = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3), padding=(1, 1),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=(3, 3), padding=(1, 1),
                       stride=(1, 1), bias=True),
             nn.ELU(),
-            nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3), padding=(1, 1),
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3), padding=(1, 1),
                       stride=(1, 1), bias=True),
             nn.ELU()
         )

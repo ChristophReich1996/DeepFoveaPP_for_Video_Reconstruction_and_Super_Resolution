@@ -1,8 +1,8 @@
 import os
-
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from u_net import RecurrentUNet

@@ -17,8 +17,10 @@ class ModelWrapper(object):
     This class wraps all modules and implements train, validation, test and inference methods
     """
 
-    def __init__(self, generator_network: nn.Module, discriminator_network: nn.Module,
-                 fft_discriminator_network: nn.Module, vgg_19: nn.Module,
+    def __init__(self, generator_network: Union[nn.Module, nn.DataParallel],
+                 discriminator_network: Union[nn.Module, nn.DataParallel],
+                 fft_discriminator_network: Union[nn.Module, nn.DataParallel],
+                 vgg_19: Union[nn.Module, nn.DataParallel],
                  generator_network_optimizer: torch.optim.Optimizer,
                  discriminator_network_optimizer: torch.optim.Optimizer,
                  fft_discriminator_network_optimizer: torch.optim.Optimizer, training_dataloader: DataLoader,
@@ -141,7 +143,10 @@ class ModelWrapper(object):
                 label = label.to(self.device)
                 # Reset recurrent tensor
                 if bool(new_sequence):
-                    self.generator_network.reset_recurrent_tensor()
+                    if isinstance(self.generator_network, nn.DataParallel):
+                        self.generator_network.module.reset_recurrent_tensor()
+                    else:
+                        self.generator_network.reset_recurrent_tensor()
                 ############# Supervised training (+ perceptrual training) #############
                 # Make prediction
                 prediction = self.generator_network(input)[-1]
@@ -164,9 +169,6 @@ class ModelWrapper(object):
                 # Reset gradients of generator network and vgg 19
                 self.generator_network.zero_grad()
                 self.vgg_19.zero_grad()
-                # Rest cuda cache -> makes training slower
-                torch.cuda.empty_cache()
-                '''
                 ############# Adversarial training #############
                 # Make prediction
                 prediction = self.generator_network(input)[-1]
@@ -190,8 +192,6 @@ class ModelWrapper(object):
                 # Reset gradients of generator and discriminator
                 self.generator_network.zero_grad()
                 self.discriminator_network.zero_grad()
-                # Rest cuda cache -> makes training slower
-                torch.cuda.empty_cache()
                 ############# Adversarial training (FFT) #############
                 # Make prediction
                 prediction = self.generator_network(input)[-1]
@@ -216,8 +216,6 @@ class ModelWrapper(object):
                 # Reset gradients of generator and discriminator
                 self.generator_network.zero_grad()
                 self.fft_discriminator_network.zero_grad()
-                # Rest cuda cache -> makes training slower
-                torch.cuda.empty_cache()
                 # Update progress bar
                 self.progress_bar.set_description(
                     'SV Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFTG. Loss={:.4f}, Adv. FFTD. Loss={:.4f}'
@@ -231,8 +229,6 @@ class ModelWrapper(object):
                 self.logger.log(metric_name='loss_discriminator', value=loss_discriminator.item())
                 self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator.item())
                 self.logger.log(metric_name='loss_fft_discriminator', value=loss_fft_discriminator.item())
-                '''
-                self.progress_bar.set_description('SV Loss={:.4f}'.format(loss_supervised.item()))
             # Save models and optimizer
             if epoch % save_models_after_n_epochs == 0:
                 # Save models
