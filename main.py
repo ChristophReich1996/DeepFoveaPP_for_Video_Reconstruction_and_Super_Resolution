@@ -1,5 +1,6 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]= '0'
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 import torch
 from torch.utils.data import DataLoader
@@ -8,7 +9,7 @@ from u_net import RecurrentUNet
 from discriminator import Discriminator, FFTDiscriminator
 from vgg_19 import VGG19
 from model_wrapper import ModelWrapper
-from dataset import PseudoDataset
+from dataset import REDS
 
 if __name__ == '__main__':
     # Init networks
@@ -28,8 +29,10 @@ if __name__ == '__main__':
                                  generator_network_optimizer=generator_network_optimizer,
                                  discriminator_network_optimizer=discriminator_network_optimizer,
                                  fft_discriminator_network_optimizer=fft_discriminator_network_optimizer,
-                                 training_dataloader=DataLoader(PseudoDataset(), batch_size=1, shuffle=False),
-                                 validation_dataloader=None,
+                                 training_dataloader=DataLoader(
+                                     REDS(path='/home/creich/REDS/train/train_sharp'), batch_size=1, shuffle=False),
+                                 validation_dataloader=DataLoader(
+                                     REDS(path='/home/creich/REDS/val/val_sharp'), batch_size=1, shuffle=False),
                                  test_dataloader=None)
     # Perform training
     model_wrapper.train()

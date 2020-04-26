@@ -13,9 +13,9 @@ class RecurrentUNet(nn.Module):
 
     def __init__(self,
                  channels_encoding: Tuple[Tuple[int, int]] = (
-                         (3 * 16, 32), (32, 64), (64, 128), (128, 128), (128, 128)),
+                         (3 * 12, 32), (32, 64), (64, 128), (128, 128), (128, 128)),
                  channels_decoding: Tuple[Tuple[int, int]] = ((384, 128), (384, 128), (256, 64), (128, 32)),
-                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((64, 16), (48, 3 * 16))) -> None:
+                 channels_super_resolution_blocks: Tuple[Tuple[int, int]] = ((64, 16), (48, 3 * 12))) -> None:
         """
         Constructor method
         :param channels_encoding: (Tuple[Tuple[int, int]]) In and out channels in each encoding path
@@ -161,10 +161,10 @@ class TemporalBlock(nn.Module):
         :param input: (torch.Tensor) Input tensor
         :return: (torch.Tensor) Output tensor
         """
-        # Init recurrent activation if needed
+        # Init recurrent activation if needed with a random tensor from N(0, 0.02)
         if self.previous_activation is None:
-            self.previous_activation = torch.ones((input.shape[0], self.out_channels, input.shape[2], input.shape[3]),
-                                                  dtype=torch.float, device=input.device)
+            self.previous_activation = torch.randn((input.shape[0], self.out_channels, input.shape[2], input.shape[3]),
+                                                   dtype=torch.float, device=input.device) * 0.02
         # Concatenate previous activation with input
         input = torch.cat((input, self.previous_activation), dim=1)
         # Perform operations
@@ -193,7 +193,7 @@ class SuperResolutionBlock(nn.Module):
     This class implements a super resolution block which is used after the original recurrent U-Net
     """
 
-    def __init__(self, in_channels: int, out_channels: int, final_output_channels: int = 3 * 16) -> None:
+    def __init__(self, in_channels: int, out_channels: int, final_output_channels: int = 3 * 12) -> None:
         """
         Constructor method
         :param in_channels: (int) Number of input channels

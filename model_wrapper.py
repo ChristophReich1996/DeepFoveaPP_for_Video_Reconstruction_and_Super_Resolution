@@ -24,7 +24,7 @@ class ModelWrapper(object):
                  fft_discriminator_network_optimizer: torch.optim.Optimizer, training_dataloader: DataLoader,
                  validation_dataloader: DataLoader, test_dataloader: DataLoader,
                  loss_function: nn.Module = lossfunction.AdaptiveRobustLoss(device='cuda:0',
-                                                                            num_of_dimension=3 * 16 * 128 ** 2),
+                                                                            num_of_dimension=3 * 12 * 1024 * 768),
                  perceptual_loss: nn.Module = lossfunction.PerceptualLoss(),
                  generator_loss: nn.Module = lossfunction.WassersteinGeneratorLoss(),
                  discriminator_loss: nn.Module = lossfunction.WassersteinDiscriminatorLoss(), device='cuda',
@@ -128,7 +128,7 @@ class ModelWrapper(object):
         self.progress_bar = tqdm(total=epochs * len(self.training_dataloader.dataset))
         # Main loop
         for epoch in range(epochs):
-            for input, label in self.training_dataloader:
+            for input, label, new_sequence in self.training_dataloader:
                 # Update progress bar
                 self.progress_bar.update(n=input.shape[0])
                 # Reset gradients of networks
@@ -139,6 +139,9 @@ class ModelWrapper(object):
                 # Data to device
                 input = input.to(self.device)
                 label = label.to(self.device)
+                # Reset recurrent tensor
+                if bool(new_sequence):
+                    self.generator_network.reset_recurrent_tensor()
                 ############# Supervised training (+ perceptrual training) #############
                 # Make prediction
                 prediction = self.generator_network(input)[-1]
@@ -148,9 +151,12 @@ class ModelWrapper(object):
                 label_reshaped_4d = label.reshape(label.shape[0] * (label.shape[1] // 3), 3, label.shape[2],
                                                   label.shape[3])
                 # Call supervised loss
+                loss_supervised = w_supervised_loss * self.loss_function(prediction, label)
+                '''
                 loss_supervised = w_supervised_loss * self.loss_function(prediction, label) \
                                   + self.perceptual_loss(self.vgg_19(prediction_reshaped_4d),
                                                          self.vgg_19(label_reshaped_4d))
+                '''
                 # Calc gradients
                 loss_supervised.backward()
                 # Optimize generator
@@ -158,6 +164,9 @@ class ModelWrapper(object):
                 # Reset gradients of generator network and vgg 19
                 self.generator_network.zero_grad()
                 self.vgg_19.zero_grad()
+                # Rest cuda cache -> makes training slower
+                torch.cuda.empty_cache()
+                '''
                 ############# Adversarial training #############
                 # Make prediction
                 prediction = self.generator_network(input)[-1]
@@ -181,6 +190,8 @@ class ModelWrapper(object):
                 # Reset gradients of generator and discriminator
                 self.generator_network.zero_grad()
                 self.discriminator_network.zero_grad()
+                # Rest cuda cache -> makes training slower
+                torch.cuda.empty_cache()
                 ############# Adversarial training (FFT) #############
                 # Make prediction
                 prediction = self.generator_network(input)[-1]
@@ -205,6 +216,8 @@ class ModelWrapper(object):
                 # Reset gradients of generator and discriminator
                 self.generator_network.zero_grad()
                 self.fft_discriminator_network.zero_grad()
+                # Rest cuda cache -> makes training slower
+                torch.cuda.empty_cache()
                 # Update progress bar
                 self.progress_bar.set_description(
                     'SV Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFTG. Loss={:.4f}, Adv. FFTD. Loss={:.4f}'
@@ -218,6 +231,8 @@ class ModelWrapper(object):
                 self.logger.log(metric_name='loss_discriminator', value=loss_discriminator.item())
                 self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator.item())
                 self.logger.log(metric_name='loss_fft_discriminator', value=loss_fft_discriminator.item())
+                '''
+                self.progress_bar.set_description('SV Loss={:.4f}'.format(loss_supervised.item()))
             # Save models and optimizer
             if epoch % save_models_after_n_epochs == 0:
                 # Save models
@@ -239,20 +254,24 @@ class ModelWrapper(object):
         # Close progress bar
         self.progress_bar.close()
 
+    @torch.no_grad()
     def validate(self,
                  validation_metrics: Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]
                  = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim)) -> None:
         # Generator model to device
-        self.generator_network.cuda()
+        self.generator_network.to(self.device)
         # Generator into eval mode
         self.generator_network.eval()
         # Init dict to store metrics
         metrics = dict()
         # Main loop
-        for input, label in self.validation_dataloader:
+        for input, label, new_sequence in self.validation_dataloader:
             # Data to device
             input = input.to(self.device)
             label = label.to(self.device)
+            # Reset recurrent tensor
+            if bool(new_sequence):
+                self.generator_network.reset_recurrent_tensor()
             # Make prediction
             prediction = self.generator_network(input)
             # Calc validation metrics
@@ -277,8 +296,10 @@ class ModelWrapper(object):
         for metric_name in metrics:
             self.logger.log(metric_name=metric_name, value=float(np.mean(metrics[metric_name])))
 
+    @torch.no_grad()
     def test(self) -> None:
         pass
 
+    @torch.no_grad()
     def inference(self) -> None:
         pass

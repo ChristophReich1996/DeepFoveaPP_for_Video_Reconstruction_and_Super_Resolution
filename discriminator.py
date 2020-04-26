@@ -10,7 +10,7 @@ class Discriminator(nn.Module):
     This class implements the discriminator network
     """
 
-    def __init__(self, channels: Tuple[int] = (32, 64, 64, 64, 1), in_channels: int = 3) -> None:
+    def __init__(self, channels: Tuple[int] = (16, 16, 16, 16, 1), in_channels: int = 3) -> None:
         """
         Constructor method
         :param channels: (Tuple[int]) Number of output channels to be utilized in each separate block
@@ -45,7 +45,7 @@ class FFTDiscriminator(nn.Module):
     This class implements the fft discriminator network
     """
 
-    def __init__(self, channels: Tuple[int] = (32, 64, 64, 64, 1), in_channels: int = 3) -> None:
+    def __init__(self, channels: Tuple[int] = (16, 16, 16, 16, 1), in_channels: int = 3) -> None:
         """
         Constructor method
         :param channels: (Tuple[int]) Number of output channels to be utilized in each separate block
