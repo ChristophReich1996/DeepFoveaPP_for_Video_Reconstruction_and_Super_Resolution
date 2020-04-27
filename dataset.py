@@ -5,6 +5,8 @@ from torch.utils.data.dataset import Dataset
 from torch.nn.functional import interpolate
 import torchvision
 from PIL import Image
+import numpy as np
+from scipy.stats import multivariate_normal
 import os
 
 
@@ -16,7 +18,7 @@ class REDS(Dataset):
     def __init__(self, path: str = '/home/creich/REDS/train/train_sharp', number_of_frames: int = 6,
                  overlapping_frames: int = 2, frame_format='png',
                  transformations: torchvision.transforms.Compose = torchvision.transforms.Compose(
-                     [torchvision.transforms.CenterCrop((1024, 768)),
+                     [torchvision.transforms.CenterCrop((768, 1024)),
                       torchvision.transforms.ToTensor()])) -> None:
         """
         Constructor method
@@ -103,6 +105,73 @@ class REDS(Dataset):
         return frames_downsampled, frames, new_video
 
 
+class REDSFovea(REDS):
+
+    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp',
+                 transformations_first: torchvision.transforms.Compose = torchvision.transforms.Compose(
+                     [torchvision.transforms.ToTensor()]),
+                 transformations_second: torchvision.transforms.Compose = torchvision.transforms.Compose(
+                     [torchvision.transforms.ToPILImage(),
+                      torchvision.transforms.CenterCrop((768, 1024)),
+                      torchvision.transforms.ToTensor()])) -> None:
+        # Call super constructor
+        super(REDSFovea, self).__init__(path=path)
+        # Save transformations
+        self.transformations_first = transformations_first
+        self.transformations_second = transformations_second
+        # Init probability of mask
+        self.p_mask = None
+
+    def get_mask(self, new_video: bool, shape: Tuple[int, int]) -> torch.Tensor:
+        if self.p_mask is None or new_video:
+            # Get all indexes of image
+            indexes = np.stack(np.meshgrid(np.arange(0, shape[1]), np.arange(0, shape[0])), axis=0).reshape((2, -1))
+            # Make mean and cov
+            mean = np.array(
+                [np.random.uniform(0.1 * shape[0], 0.9 * shape[0]), np.random.uniform(0.1 * shape[1], 0.9 * shape[1])])
+            cov = np.array([[2000.0, 0.0], [0.0, 2000.0]])
+            # Get probabilities, normalize them, and add an offset
+            self.p_mask = multivariate_normal.pdf(indexes.T, mean=mean, cov=cov)
+            self.p_mask = (self.p_mask - self.p_mask.min()) / (self.p_mask.max() - self.p_mask.min())
+            self.p_mask = np.where(self.p_mask < 0.05, 0.08, self.p_mask)
+        # Make mask
+        mask = torch.from_numpy(self.p_mask >= np.random.random(shape[0] * shape[1])).reshape((shape[0], shape[1]))
+        return mask.float()
+
+    @torch.no_grad()
+    def __getitem__(self, item):
+        # Check if current frame sequence is a new video sequence
+        if self.previously_loaded_frames is None or self.previously_loaded_frames[0].split('/')[-2] != \
+                self.data_path[item][0].split('/')[-2]:
+            new_video = True
+        else:
+            new_video = False
+        # Set current data path to previously loaded frames
+        self.previously_loaded_frames = self.data_path[item]
+        # Load frames
+        frames_masked = []
+        frames_label = []
+        for frame in self.data_path[item]:
+            # Load images as PIL image, and apply first transformation
+            image = (self.transformations_first(Image.open(frame)))
+            # Normalize image to a mean of zero and a std of one
+            image = image.sub_(image.mean()).div_(image.std())
+            # Downsampled frames
+            image_masked = interpolate(image[None], scale_factor=0.25, mode='bilinear', align_corners=False)[0]
+            # Apply mask to image
+            image_masked = image_masked * self.get_mask(new_video=new_video,
+                                                        shape=(image_masked.shape[1], image_masked.shape[2]))
+            # Apply second transformations, and add to list of frames
+            frames_masked.append(self.transformations_second(image_masked)) # Error
+            # Same action with not masked image
+            frames_label.append(self.transformations_second(image)) # Something wrong...
+        # Concatenate frames to tensor of shape (3 * number of frames, height, width)
+        frames_masked = torch.cat(frames_masked, dim=0)
+        frames_label = torch.cat(frames_label, dim=0)
+        # Returns frames and a downscaled version as input
+        return frames_masked, frames_label, new_video
+
+
 class PseudoDataset(Dataset):
     """
     This class implements a pseudo dataset to test the implemented architecture
@@ -134,3 +203,15 @@ class PseudoDataset(Dataset):
         if item >= len(self):
             raise IndexError
         return torch.ones([3 * 16, 64, 64], dtype=torch.float), torch.ones([3 * 16, 256, 256], dtype=torch.float)
+
+
+if __name__ == '__main__':
+    dataset = REDSFovea()
+    frames_input, frames_label, _ = dataset[0]
+
+    import matplotlib.pyplot as plt
+
+    plt.imshow(frames_input[0:3].permute(1, 2, 0).numpy())
+    plt.show()
+    plt.imshow(frames_label[0:3].permute(1, 2, 0).numpy())
+    plt.show()
