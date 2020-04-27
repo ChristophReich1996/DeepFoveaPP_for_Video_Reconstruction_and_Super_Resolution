@@ -1,9 +1,8 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from u_net import RecurrentUNet
@@ -42,4 +41,4 @@ if __name__ == '__main__':
                                  test_dataloader=None)
     model_wrapper.validate()
     # Perform training
-    model_wrapper.train()
+    model_wrapper.train(epochs=10)

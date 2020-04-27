@@ -306,7 +306,7 @@ class ModelWrapper(object):
             # Calc validation metrics
             for validation_metric in validation_metrics:
                 # Calc metric
-                metric = validation_metric(prediction, label)
+                metric = validation_metric(prediction, label).item()
                 # Case if validation metric is a nn.Module
                 if isinstance(validation_metric, nn.Module):
                     # Save metric and name of metric
