@@ -41,6 +41,7 @@ class Logger(object):
             # Save values
             torch.save(values, os.path.join(path, '{}.pt'.format(metric_name)))
 
+
 def psnr(prediction: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
     """
     Function computes the Peak Signal to Noise Ratio
@@ -73,3 +74,17 @@ def ssim(prediction: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
     correlation_coefficient = (1 / label.numel()) * torch.sum((prediction - prediction_mean) * (label - label_mean))
     return ((2.0 * prediction_mean * label_mean) * (2.0 * correlation_coefficient)) / \
            ((prediction_mean ** 2 + label_mean ** 2) * (prediction_var + label_var))
+
+
+def normalize_0_1_batch(input: torch.tensor) -> torch.tensor:
+    '''
+    Normalize a given tensor to a range of [0, 1]
+    Source: https://github.com/ChristophReich1996/Semantic_Pyramid_for_Image_Generation/blob/master/misc.py
+
+    :param input: (Torch tensor) Input tensor
+    :return: (Torch tensor) Normalized output tensor
+    '''
+    input_flatten = input.view(input.shape[0], -1)
+    return ((input - torch.min(input_flatten, dim=1)[0][:, None, None, None]) / (
+            torch.max(input_flatten, dim=1)[0][:, None, None, None] -
+            torch.min(input_flatten, dim=1)[0][:, None, None, None]))

@@ -5,10 +5,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torch.autograd
+import torchvision
 import os
 from datetime import datetime
 from tqdm import tqdm
 import numpy as np
+from datetime import datetime
 
 import lossfunction
 import misc
@@ -249,7 +251,8 @@ class ModelWrapper(object):
     @torch.no_grad()
     def validate(self,
                  validation_metrics: Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]
-                 = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim)) -> None:
+                 = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim),
+                 sequences_to_plot: Tuple[int, ...] = (1, 2, 3, 4)) -> None:
         # Generator model to device
         self.generator_network.to(self.device)
         # Generator into eval mode
@@ -257,7 +260,9 @@ class ModelWrapper(object):
         # Init dict to store metrics
         metrics = dict()
         # Main loop
-        for input, label, new_sequence in self.validation_dataloader:
+        for index_sequence, batch in enumerate(self.validation_dataloader):
+            # Unpack batch
+            input, label, new_sequence = batch
             # Data to device
             input = input.to(self.device)
             label = label.to(self.device)
@@ -266,6 +271,35 @@ class ModelWrapper(object):
                 self.generator_network.reset_recurrent_tensor()
             # Make prediction
             prediction = self.generator_network(input)
+            # Plot prediction label and input
+            if index_sequence in sequences_to_plot:
+                # Reshape tensors
+                prediction_batched = prediction.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
+                                                        prediction.shape[2], prediction.shape[3])
+                input_batched = input.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
+                                              input.shape[2], input.shape[3])
+                label_batched = label.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
+                                              label.shape[2], label.shape[3])
+                # Normalize images batch wise to range of [0, 1]
+                prediction_batched = misc.normalize_0_1_batch(prediction_batched)
+                input_batched = misc.normalize_0_1_batch(input_batched)
+                label_batched = misc.normalize_0_1_batch(label_batched)
+                # Make plots
+                torchvision.utils.save_image(
+                    prediction_batched,
+                    filename=os.path.join(self.path_save_plots,
+                                          'prediction_{}_{}.png'.format(index_sequence, str(datetime.now()))),
+                    nrow=self.validation_dataloader.dataset.number_of_frames)
+                torchvision.utils.save_image(
+                    label_batched,
+                    filename=os.path.join(self.path_save_plots,
+                                          'label_{}_{}.png'.format(index_sequence, str(datetime.now()))),
+                    nrow=self.validation_dataloader.dataset.number_of_frames)
+                torchvision.utils.save_image(
+                    input_batched,
+                    filename=os.path.join(self.path_save_plots,
+                                          'input_{}_{}.png'.format(index_sequence, str(datetime.now()))),
+                    nrow=self.validation_dataloader.dataset.number_of_frames)
             # Calc validation metrics
             for validation_metric in validation_metrics:
                 # Calc metric
@@ -287,6 +321,8 @@ class ModelWrapper(object):
         # Average metrics and save them in logs
         for metric_name in metrics:
             self.logger.log(metric_name=metric_name, value=float(np.mean(metrics[metric_name])))
+        # Save metrics
+        self.logger.save_metrics(path=self.path_save_metrics)
 
     @torch.no_grad()
     def test(self) -> None:
