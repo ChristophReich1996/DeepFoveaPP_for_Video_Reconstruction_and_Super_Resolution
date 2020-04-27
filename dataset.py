@@ -77,8 +77,8 @@ class REDS(Dataset):
     def __getitem__(self, item) -> Tuple[torch.Tensor, torch.Tensor, bool]:
         """
         Method returns one instance of the dataset for a given index
-        :param item: (int) Index to return
-        :return: (Tuple[torch.Tensor, torch.Tensor]) One image frame in low and high resolution
+        :param item: (int) Index to get element
+        :return: (Tuple[torch.Tensor, torch.Tensor]) Low res sequence, high res sequence, new video flag
         """
         # Check if current frame sequence is a new video sequence
         if self.previously_loaded_frames is None or self.previously_loaded_frames[0].split('/')[-2] != \
@@ -115,6 +115,9 @@ class REDS(Dataset):
 
 
 class REDSFovea(REDS):
+    """
+    Class implements the REDS dataset with a fovea sampled low resolution input sequence and a high resolution label
+    """
 
     def __init__(self, path: str = '/home/creich/REDS/train/train_sharp') -> None:
         # Call super constructor
@@ -123,6 +126,12 @@ class REDSFovea(REDS):
         self.p_mask = None
 
     def get_mask(self, new_video: bool, shape: Tuple[int, int]) -> torch.Tensor:
+        """
+        Method returns a binary fovea mask
+        :param new_video: (bool) Flag if a new video is present
+        :param shape: (Tuple[int, int]) Image shape
+        :return: (torch.Tensor) Fovea mask
+        """
         if self.p_mask is None or new_video:
             # Get all indexes of image
             indexes = np.stack(np.meshgrid(np.arange(0, shape[1]), np.arange(0, shape[0])), axis=0).reshape((2, -1))
@@ -139,7 +148,13 @@ class REDSFovea(REDS):
         return mask.float()
 
     @torch.no_grad()
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+        """
+        Get item method returns the fovea masked downsampled frame sequence, the high resolution sequence, and a bool
+        if the new sequence is the start of a new video
+        :param item: (int) Index to get element
+        :return: (Tuple[torch.Tensor, torch.Tensor]) Low res fovea sampled sequence, high res sequence, new video flag
+        """
         # Check if current frame sequence is a new video sequence
         if self.previously_loaded_frames is None or self.previously_loaded_frames[0].split('/')[-2] != \
                 self.data_path[item][0].split('/')[-2]:
