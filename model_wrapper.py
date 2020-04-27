@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader
 import torch.autograd
 import torchvision
 import os
-from datetime import datetime
 from tqdm import tqdm
 import numpy as np
 from datetime import datetime
@@ -134,6 +133,9 @@ class ModelWrapper(object):
         self.vgg_19.to(self.device)
         # Init progress bar
         self.progress_bar = tqdm(total=epochs * len(self.training_dataloader.dataset))
+        # Initial validation
+        self.progress_bar.set_description('Validate...')
+        self.validate()
         # Main loop
         for epoch in range(epochs):
             for input, label, new_sequence in self.training_dataloader:
@@ -240,6 +242,7 @@ class ModelWrapper(object):
                            'fft_discriminator_network_optimizer_{}.pt'.format(epoch))
             if epoch % validate_after_n_epochs == 0:
                 # Validation
+                self.progress_bar.set_description('Validate...')
                 self.validate()
                 # Log validation epoch
                 self.logger.log(metric_name='validation_epoch', value=epoch)
