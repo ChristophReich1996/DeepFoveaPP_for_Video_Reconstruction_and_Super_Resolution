@@ -21,7 +21,7 @@ class VGG19(nn.Module):
         # Load pre-trained feature part of vgg-19 from torchvision
         self.vgg_19_features = torchvision.models.vgg19(pretrained=True).features
         # Convert feature module into model list of layers
-        self.vgg_19_features = nn.ModuleList(list(self.vgg_19_features))
+        self.vgg_19_features = nn.ModuleList(list(self.vgg_19_features)[:indexes_of_layers_to_return_features[-1] + 1])
         # Save parameter
         self.indexes_of_layers_to_return_features = indexes_of_layers_to_return_features
         # Set requires grad of all parameters to false since model is fixed

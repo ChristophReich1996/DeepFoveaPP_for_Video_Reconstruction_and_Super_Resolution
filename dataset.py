@@ -13,7 +13,7 @@ class REDS(Dataset):
     This class implements a video dataset for super resolution
     """
 
-    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp', number_of_frames: int = 12,
+    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp', number_of_frames: int = 6,
                  overlapping_frames: int = 2, frame_format='png',
                  transformations: torchvision.transforms.Compose = torchvision.transforms.Compose(
                      [torchvision.transforms.CenterCrop((1024, 768)),

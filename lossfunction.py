@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import robust_loss_pytorch
 
 
@@ -10,7 +11,7 @@ class AdaptiveRobustLoss(nn.Module):
     This class implements the adaptive robust loss function proposed by Jon Barron for image tensors
     """
 
-    def __init__(self, device: str = 'cuda:0', num_of_dimension: int = 1920 * 1080 * 3) -> None:
+    def __init__(self, device: str = 'cuda:0', num_of_dimension: int = 3 * 6 * 1024 * 768) -> None:
         """
         Constructor method
         """
@@ -51,7 +52,8 @@ class WassersteinDiscriminatorLoss(nn.Module):
         # Call super constructor
         super(WassersteinDiscriminatorLoss, self).__init__()
 
-    def forward(self, prediction_real: torch.Tensor, prediction_fake: torch.Tensor) -> torch.Tensor:
+    def forward(self, prediction_real: torch.Tensor, prediction_fake: torch.Tensor) -> Tuple[
+        torch.Tensor, torch.Tensor]:
         """
         Forward pass of the loss module
         :param prediction_real: (torch.Tensor) Prediction for real samples
@@ -59,8 +61,9 @@ class WassersteinDiscriminatorLoss(nn.Module):
         :return: (torch.Tensor) Scalar loss value
         """
         # Compute loss
-        loss = torch.mean(prediction_fake) - torch.mean(prediction_real)
-        return loss
+        loss_real = - torch.mean(prediction_real)
+        loss_fake = torch.mean(prediction_fake)
+        return loss_real, loss_fake
 
 
 class WassersteinGeneratorLoss(nn.Module):
@@ -84,6 +87,65 @@ class WassersteinGeneratorLoss(nn.Module):
         # Compute loss
         loss = - torch.mean(prediction_fake)
         return loss
+
+
+class NonSaturatingLogisticGeneratorLoss(nn.Module):
+    '''
+    Implementation of the non saturating GAN loss for the generator network
+    Source: https://github.com/ChristophReich1996/BCS_Deep_Learning/blob/master/Semantic_Pyramid_Style_Gan_2/lossfunction.py
+    '''
+
+    def __init__(self) -> None:
+        '''
+        Constructor method
+        '''
+        # Call super constructor
+        super(NonSaturatingLogisticGeneratorLoss, self).__init__()
+
+    def __repr__(self):
+        '''
+        Get representation of the loss module
+        :return: (str) String including information
+        '''
+        return '{}'.format(self.__class__.__name__)
+
+    def forward(self, prediction_fake: torch.Tensor) -> torch.Tensor:
+        '''
+        Forward pass to compute the generator loss
+        :param prediction_fake: (torch.Tensor) Prediction of the discriminator for fake samples
+        :return: (torch.Tensor) Loss value
+        '''
+        # Calc loss
+        loss = torch.mean(F.softplus(-prediction_fake))
+        return loss
+
+
+class NonSaturatingLogisticDiscriminatorLoss(nn.Module):
+    '''
+    Implementation of the non saturating GAN loss for the discriminator network
+    Source: https://github.com/ChristophReich1996/BCS_Deep_Learning/blob/master/Semantic_Pyramid_Style_Gan_2/lossfunction.py
+    '''
+
+    def __init__(self) -> None:
+        '''
+        Constructor
+        '''
+        # Call super constructor
+        super(NonSaturatingLogisticDiscriminatorLoss, self).__init__()
+
+    def forward(self, prediction_real: torch.Tensor, prediction_fake: torch.Tensor) -> Tuple[
+        torch.Tensor, torch.Tensor]:
+        '''
+        Forward pass. Loss parts are not summed up to not retain the whole backward graph later.
+        :param prediction_real: (torch.Tensor) Prediction of the discriminator for real images
+        :param prediction_fake: (torch.Tensor) Prediction of the discriminator for fake images
+        :return: (torch.Tensor) Loss values for real and fake part
+        '''
+        # Calc real loss part
+        loss_real = torch.mean(F.softplus(-prediction_real))
+        # Calc fake loss part
+        loss_fake = torch.mean(F.softplus(prediction_fake))
+        return loss_real, loss_fake
 
 
 class PerceptualLoss(nn.Module):

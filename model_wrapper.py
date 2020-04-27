@@ -2,7 +2,9 @@ from typing import Callable, Union, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+import torch.autograd
 import os
 from datetime import datetime
 from tqdm import tqdm
@@ -26,10 +28,10 @@ class ModelWrapper(object):
                  fft_discriminator_network_optimizer: torch.optim.Optimizer, training_dataloader: DataLoader,
                  validation_dataloader: DataLoader, test_dataloader: DataLoader,
                  loss_function: nn.Module = lossfunction.AdaptiveRobustLoss(device='cuda:0',
-                                                                            num_of_dimension=3 * 12 * 1024 * 768),
+                                                                            num_of_dimension=3 * 6 * 1024 * 768),
                  perceptual_loss: nn.Module = lossfunction.PerceptualLoss(),
-                 generator_loss: nn.Module = lossfunction.WassersteinGeneratorLoss(),
-                 discriminator_loss: nn.Module = lossfunction.WassersteinDiscriminatorLoss(), device='cuda',
+                 generator_loss: nn.Module = lossfunction.NonSaturatingLogisticGeneratorLoss(),
+                 discriminator_loss: nn.Module = lossfunction.NonSaturatingLogisticDiscriminatorLoss(), device='cuda',
                  save_data_path: str = 'saved_data') -> None:
         """
         Constructor method
@@ -98,8 +100,9 @@ class ModelWrapper(object):
         self.logger.hyperparameter['generator_loss'] = str(generator_loss)
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
-    def train(self, epochs: int = 1, save_models_after_n_epochs: int = 4, validate_after_n_epochs: int = 4,
-              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0) -> None:
+    def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
+              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0,
+              w_perceptual: float = 1.0) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -115,6 +118,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['w_supervised_loss'] = str(w_supervised_loss)
         self.logger.hyperparameter['w_adversarial'] = str(w_adversarial)
         self.logger.hyperparameter['w_fft_adversarial'] = str(w_fft_adversarial)
+        self.logger.hyperparameter['w_perceptual'] = str(w_perceptual)
         # Model into training mode
         self.generator_network.train()
         self.discriminator_network.train()
@@ -149,7 +153,7 @@ class ModelWrapper(object):
                         self.generator_network.reset_recurrent_tensor()
                 ############# Supervised training (+ perceptrual training) #############
                 # Make prediction
-                prediction = self.generator_network(input)[-1]
+                prediction = self.generator_network(input.detach())
                 # Reshape prediction and label for vgg19
                 prediction_reshaped_4d = prediction.reshape(prediction.shape[0] * (prediction.shape[1] // 3), 3,
                                                             prediction.shape[2], prediction.shape[3])
@@ -157,78 +161,70 @@ class ModelWrapper(object):
                                                   label.shape[3])
                 # Call supervised loss
                 loss_supervised = w_supervised_loss * self.loss_function(prediction, label)
-                '''
-                loss_supervised = w_supervised_loss * self.loss_function(prediction, label) \
-                                  + self.perceptual_loss(self.vgg_19(prediction_reshaped_4d),
-                                                         self.vgg_19(label_reshaped_4d))
-                '''
+
+                loss_perceptual = w_perceptual * self.perceptual_loss(
+                    self.vgg_19(F.avg_pool2d(prediction_reshaped_4d, kernel_size=2)),
+                    self.vgg_19(F.avg_pool2d(label_reshaped_4d, kernel_size=2)))
                 # Calc gradients
-                loss_supervised.backward()
+                (loss_supervised + loss_perceptual).backward()
                 # Optimize generator
                 self.generator_network_optimizer.step()
                 # Reset gradients of generator network and vgg 19
                 self.generator_network.zero_grad()
-                self.vgg_19.zero_grad()
                 ############# Adversarial training #############
                 # Make prediction
-                prediction = self.generator_network(input)[-1]
-                # Reshape label and prediction for discriminator
-                prediction_reshaped_5d = prediction.reshape(prediction.shape[0], 3, prediction.shape[1] // 3,
-                                                            prediction.shape[2], prediction.shape[3])
-                label_reshaped_5d = label.reshape(label.shape[0], 3, label.shape[1] // 3, label.shape[2],
-                                                  label.shape[3])
+                prediction = self.generator_network(input.detach())
                 # Calc discriminator loss
-                loss_discriminator = self.discriminator_loss(self.discriminator_network(label_reshaped_5d),
-                                                             self.discriminator_network(prediction_reshaped_5d))
+                loss_discriminator_real, loss_discriminator_fake = self.discriminator_loss(
+                    self.discriminator_network(label),
+                    self.discriminator_network(prediction))
                 # Calc gradients and retain graph of generator gradients
-                loss_discriminator.backward(retain_graph=True)
+                loss_discriminator_fake.backward(retain_graph=True)
+                loss_discriminator_real.backward()
                 # Calc generator loss
-                loss_generator = w_adversarial * self.generator_loss(self.discriminator_network(prediction_reshaped_5d))
+                loss_generator = w_adversarial * self.generator_loss(
+                    self.discriminator_network(prediction))
                 # Calc gradients
                 loss_generator.backward()
                 # Optimize generator and discriminator
                 self.generator_network_optimizer.step()
                 self.discriminator_network_optimizer.step()
-                # Reset gradients of generator and discriminator
-                self.generator_network.zero_grad()
-                self.discriminator_network.zero_grad()
                 ############# Adversarial training (FFT) #############
                 # Make prediction
-                prediction = self.generator_network(input)[-1]
-                # Reshape label and prediction for discriminator
-                prediction_reshaped_5d = prediction.reshape(prediction.shape[0], 3, prediction.shape[1] // 3,
-                                                            prediction.shape[2], prediction.shape[3])
-                label_reshaped_5d = label.reshape(label.shape[0], 3, label.shape[1] // 3, label.shape[2],
-                                                  label.shape[3])
+                prediction = self.generator_network(input.detach())
                 # Calc discriminator loss
-                loss_fft_discriminator = self.discriminator_loss(self.fft_discriminator_network(label_reshaped_5d),
-                                                                 self.fft_discriminator_network(prediction_reshaped_5d))
+                loss_fft_discriminator_real, loss_fft_discriminator_fake = self.discriminator_loss(
+                    self.fft_discriminator_network(label),
+                    self.fft_discriminator_network(prediction))
                 # Calc gradients and retain graph of generator gradients
-                loss_fft_discriminator.backward(retain_graph=True)
+                loss_fft_discriminator_fake.backward(retain_graph=True)
+                loss_fft_discriminator_real.backward()
                 # Calc generator loss
                 loss_fft_generator = w_fft_adversarial * self.generator_loss(
-                    self.fft_discriminator_network(prediction_reshaped_5d))
+                    self.fft_discriminator_network(prediction))
                 # Calc gradients
                 loss_fft_generator.backward()
                 # Optimize generator and discriminator
                 self.generator_network_optimizer.step()
                 self.fft_discriminator_network_optimizer.step()
-                # Reset gradients of generator and discriminator
-                self.generator_network.zero_grad()
-                self.fft_discriminator_network.zero_grad()
                 # Update progress bar
                 self.progress_bar.set_description(
-                    'SV Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
-                        .format(loss_supervised.item(), loss_generator.item(), loss_discriminator.item(),
-                                loss_fft_generator.item(), loss_fft_discriminator.item()))
+                    'SV Loss={:.4f}, P Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
+                        .format(loss_supervised.item(), loss_perceptual.item(), loss_generator.item(),
+                                loss_discriminator_real.item() + loss_discriminator_fake.item(),
+                                loss_fft_generator.item(),
+                                loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item()))
                 # Log losses
                 self.logger.log(metric_name='training_iteration', value=self.progress_bar.n)
                 self.logger.log(metric_name='epoch', value=epoch)
                 self.logger.log(metric_name='loss_supervised', value=loss_supervised.item())
+                self.logger.log(metric_name='loss_perceptual', value=loss_perceptual.item())
                 self.logger.log(metric_name='loss_generator', value=loss_generator.item())
-                self.logger.log(metric_name='loss_discriminator', value=loss_discriminator.item())
+                self.logger.log(metric_name='loss_discriminator',
+                                value=loss_discriminator_real.item() + loss_discriminator_fake.item())
                 self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator.item())
-                self.logger.log(metric_name='loss_fft_discriminator', value=loss_fft_discriminator.item())
+                self.logger.log(metric_name='loss_fft_discriminator',
+                                value=loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item())
             # Save models and optimizer
             if epoch % save_models_after_n_epochs == 0:
                 # Save models

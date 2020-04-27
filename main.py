@@ -1,5 +1,6 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 
 import torch
 import torch.nn as nn
@@ -10,17 +11,21 @@ from discriminator import Discriminator, FFTDiscriminator
 from vgg_19 import VGG19
 from model_wrapper import ModelWrapper
 from dataset import REDS
+from lossfunction import AdaptiveRobustLoss
 
 if __name__ == '__main__':
     # Init networks
-    generator_network = RecurrentUNet().cuda()
-    discriminator_network = Discriminator().cuda()
-    fft_discriminator_network = FFTDiscriminator().cuda()
-    vgg_19 = VGG19().cuda()
+    generator_network = RecurrentUNet()
+    discriminator_network = Discriminator()
+    fft_discriminator_network = FFTDiscriminator()
+    vgg_19 = VGG19()
+    # Init adaptive loss
+    loss_function = AdaptiveRobustLoss(device='cuda:0', num_of_dimension=3 * 6 * 1024 * 768)
     # Init optimizers
-    generator_network_optimizer = torch.optim.Adam(generator_network.parameters(), lr=3e-4)
-    discriminator_network_optimizer = torch.optim.Adam(discriminator_network.parameters(), lr=3e-4)
-    fft_discriminator_network_optimizer = torch.optim.Adam(fft_discriminator_network.parameters(), lr=3e-4)
+    generator_network_optimizer = torch.optim.Adam(
+        list(generator_network.parameters()) + list(loss_function.parameters()), lr=1e-4)
+    discriminator_network_optimizer = torch.optim.Adam(discriminator_network.parameters(), lr=1e-4)
+    fft_discriminator_network_optimizer = torch.optim.Adam(fft_discriminator_network.parameters(), lr=1e-4)
     # Init model wrapper
     model_wrapper = ModelWrapper(generator_network=generator_network,
                                  discriminator_network=discriminator_network,
@@ -29,6 +34,7 @@ if __name__ == '__main__':
                                  generator_network_optimizer=generator_network_optimizer,
                                  discriminator_network_optimizer=discriminator_network_optimizer,
                                  fft_discriminator_network_optimizer=fft_discriminator_network_optimizer,
+                                 loss_function=loss_function,
                                  training_dataloader=DataLoader(
                                      REDS(path='/home/creich/REDS/train/train_sharp'), batch_size=1, shuffle=False),
                                  validation_dataloader=DataLoader(
