@@ -103,7 +103,7 @@ class ModelWrapper(object):
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
               w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0,
-              w_perceptual: float = 1.0, plot_after_n_iterations: int = 145) -> None:
+              w_perceptual: float = 1.0, plot_after_n_iterations: int = 144) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:

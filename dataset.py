@@ -28,6 +28,7 @@ class REDS(Dataset):
         super(REDS, self).__init__()
         # Save arguments
         self.number_of_frames = number_of_frames
+        self.overlapping_frames = overlapping_frames
         # Init previously loaded frames
         self.previously_loaded_frames = None
         # Init list to store all path to frames
@@ -117,9 +118,18 @@ class REDSFovea(REDS):
     Class implements the REDS dataset with a fovea sampled low resolution input sequence and a high resolution label
     """
 
-    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp') -> None:
+    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp', number_of_frames: int = 6,
+                 overlapping_frames: int = 2, frame_format='png') -> None:
+        """
+        Constructor method
+        :param path: (str) Path to data
+        :param number_of_frames: (int) Number of frames in one dataset element
+        :param overlapping_frames: (int) Number of overlapping frames of two consecutive dataset elements
+        :param frame_format: (str) Frame format to detect frames in path
+        """
         # Call super constructor
-        super(REDSFovea, self).__init__(path=path)
+        super(REDSFovea, self).__init__(path=path, number_of_frames=number_of_frames,
+                                        overlapping_frames=overlapping_frames, frame_format=frame_format)
         # Init probability of mask
         self.p_mask = None
 
@@ -191,6 +201,100 @@ class REDSFovea(REDS):
         return frames_masked, frames_label, new_video
 
 
+class REDSParallel(Dataset):
+    """
+    Wraps the REDS dataset for multi gpu usage. The number of gpus must match the batch size. One batch on one GPU
+    """
+
+    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp', number_of_frames: int = 6,
+                 overlapping_frames: int = 2, frame_format='png', number_of_gpus: int = 2) -> None:
+        """
+        Constructor method
+        :param path: (str) Path to data
+        :param number_of_frames: (int) Number of frames in one dataset element
+        :param overlapping_frames: (int) Number of overlapping frames of two consecutive dataset elements
+        :param frame_format: (str) Frame format to detect frames in path
+        """
+        # Init for each gpu one dataset
+        self.datasets = [REDS(path=path, number_of_frames=number_of_frames, overlapping_frames=overlapping_frames,
+                              frame_format=frame_format) for _ in range(number_of_gpus)]
+        # Save parameters
+        self.number_of_gpus = number_of_gpus
+
+    def __len__(self) -> int:
+        """
+        Method to get the length of the dataset
+        :return: (int) Length
+        """
+        return len(self.datasets[0])
+
+    def __getitem__(self, item) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+        """
+        Get item method returns the downsampled frame sequence, the high resolution sequence, and a bool
+        if the new sequence is the start of a new video
+        :param item: (int) Index to get element
+        :return: (Tuple[torch.Tensor, torch.Tensor]) Low res fovea sampled sequence, high res sequence, new video flag
+        """
+        # Get gpu index corresponding to item value
+        gpu_index = item % self.number_of_gpus
+        # Calc offset for item
+        item = (item // self.number_of_gpus) + ((len(self) // self.number_of_gpus) * gpu_index)
+        return self.datasets[gpu_index][item]
+
+
+class REDSFoveaParallel(Dataset):
+    """
+    Wraps the REDS fovea dataset for multi gpu usage. The number of gpus must match the batch size. One batch on one GPU
+    """
+
+    def __init__(self, path: str = '/home/creich/REDS/train/train_sharp', number_of_frames: int = 6,
+                 overlapping_frames: int = 2, frame_format='png', number_of_gpus: int = 2) -> None:
+        """
+        Constructor method
+        :param path: (str) Path to data
+        :param number_of_frames: (int) Number of frames in one dataset element
+        :param overlapping_frames: (int) Number of overlapping frames of two consecutive dataset elements
+        :param frame_format: (str) Frame format to detect frames in path
+        """
+        # Init for each gpu one dataset
+        self.datasets = [REDSFovea(path=path, number_of_frames=number_of_frames, overlapping_frames=overlapping_frames,
+                                   frame_format=frame_format) for _ in range(number_of_gpus)]
+        # Save parameters
+        self.number_of_gpus = number_of_gpus
+
+    def __len__(self) -> int:
+        """
+        Method to get the length of the dataset
+        :return: (int) Length
+        """
+        return len(self.datasets[0])
+
+    def __getitem__(self, item) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+        """
+        Get item method returns the fovea masked downsampled frame sequence, the high resolution sequence, and a bool
+        if the new sequence is the start of a new video
+        :param item: (int) Index to get element
+        :return: (Tuple[torch.Tensor, torch.Tensor]) Low res fovea sampled sequence, high res sequence, new video flag
+        """
+        # Get gpu index corresponding to item value
+        gpu_index = item % self.number_of_gpus
+        # Calc offset for item
+        item = (item // self.number_of_gpus) + ((len(self) // self.number_of_gpus) * gpu_index)
+        return self.datasets[gpu_index][item]
+
+
+def reds_parallel_collate_fn(batch: Tuple[torch.Tensor, torch.Tensor, bool]) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+    """
+    Collate function for parallel dataset to manage new_video flag
+    :param batch: (Tuple[torch.Tensor, torch.Tensor, bool]) Batch
+    :return: (Tuple[torch.Tensor, torch.Tensor, bool]) Stacked input & label and new_video flag
+    """
+    input = torch.stack([batch[index][0] for index in range(len(batch))], dim=0)
+    label = torch.stack([batch[index][1] for index in range(len(batch))], dim=0)
+    new_video = sum([batch[index][2] for index in range(len(batch))]) != 0
+    return input, label, new_video
+
+
 class PseudoDataset(Dataset):
     """
     This class implements a pseudo dataset to test the implemented architecture
@@ -225,11 +329,12 @@ class PseudoDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = REDSFovea()
-    frames_input, frames_label, _ = dataset[1000]
-
+    from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
 
-    plt.imshow(frames_input.numpy().transpose(1, 2, 0)[:, :, 0:3])
-    plt.savefig('Input.png')
-    plt.show()
+    dataset = DataLoader(REDSFoveaParallel(), shuffle=False, num_workers=1, batch_size=2,
+                         collate_fn=reds_parallel_collate_fn)
+
+    counter = 0
+    for input, label, new_video in dataset:
+        print(new_video)
