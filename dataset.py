@@ -170,7 +170,7 @@ class REDSFovea(REDS):
             # Load images as PIL image, and convert to tensor
             image = tf.to_tensor(Image.open(frame))
             # Normalize image to a mean of zero and a std of one
-            image = image.sub_(image.mean()).div_(image.std())
+            # image = image.sub_(image.mean()).div_(image.std())
             # Downsampled frames
             image_low_res = interpolate(image[None], scale_factor=0.25, mode='bilinear', align_corners=False)[0]
             # Apply mask to image
