@@ -264,6 +264,12 @@ class ModelWrapper(object):
                  validation_metrics: Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]
                  = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim),
                  sequences_to_plot: Tuple[int, ...] = (1, 2, 3, 4)) -> None:
+        """
+        Validation method which produces validation metrics and plots
+        :param validation_metrics: (Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]) Tuple
+        of callable validation metric to be computed
+        :param sequences_to_plot: (Tuple[int, ...]) Tuple of validation dataset indexes to be plotted
+        """
         # Generator model to device
         self.generator_network.to(self.device)
         # Generator into eval mode
