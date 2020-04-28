@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '2'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 import torch
 from torch.utils.data import DataLoader
@@ -22,9 +22,10 @@ if __name__ == '__main__':
     loss_function = AdaptiveRobustLoss(device='cuda:0', num_of_dimension=3 * 6 * 1024 * 768)
     # Init optimizers
     generator_network_optimizer = torch.optim.Adam(
-        list(generator_network.parameters()) + list(loss_function.parameters()), lr=1e-3)
-    discriminator_network_optimizer = torch.optim.Adam(discriminator_network.parameters(), lr=1e-4)
-    fft_discriminator_network_optimizer = torch.optim.Adam(fft_discriminator_network.parameters(), lr=1e-4)
+        list(generator_network.parameters()) + list(loss_function.parameters()), lr=3e-4, betas=(0.0, 0.95))
+    discriminator_network_optimizer = torch.optim.Adam(discriminator_network.parameters(), lr=3e-4, betas=(0.0, 0.95))
+    fft_discriminator_network_optimizer = torch.optim.Adam(fft_discriminator_network.parameters(), lr=3e-4,
+                                                           betas=(0.0, 0.95))
     # Init model wrapper
     model_wrapper = ModelWrapper(generator_network=generator_network,
                                  discriminator_network=discriminator_network,
@@ -36,9 +37,10 @@ if __name__ == '__main__':
                                  loss_function=loss_function,
                                  training_dataloader=DataLoader(
                                      REDSFovea(path='/home/creich/REDS/train/train_sharp'), batch_size=1,
-                                     shuffle=False),
+                                     shuffle=False, num_workers=1),
                                  validation_dataloader=DataLoader(
-                                     REDSFovea(path='/home/creich/REDS/val/val_sharp'), batch_size=1, shuffle=False),
+                                     REDSFovea(path='/home/creich/REDS/val/val_sharp'), batch_size=1, shuffle=False,
+                                     num_workers=1),
                                  test_dataloader=None)
     # Perform training
     model_wrapper.train(epochs=10)
