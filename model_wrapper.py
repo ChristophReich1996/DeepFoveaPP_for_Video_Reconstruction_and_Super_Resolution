@@ -228,11 +228,12 @@ class ModelWrapper(object):
                 self.logger.log(metric_name='loss_fft_discriminator',
                                 value=loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item())
                 # Plot training prediction
-                if (self.progress_bar.n - 1) % (plot_after_n_iterations + 1) == 0:
-                    prediction_batched = prediction.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
-                                                            prediction.shape[2], prediction.shape[3])
-                    label_batched = label.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
-                                                       label.shape[2], label.shape[3])
+                if (self.progress_bar.n) % (plot_after_n_iterations) == 0:
+                    prediction_batched = prediction.reshape(
+                        prediction.shape[0] * self.validation_dataloader.dataset.number_of_frames, 3,
+                        prediction.shape[2], prediction.shape[3])
+                    label_batched = label.reshape(label.shape[0] * self.validation_dataloader.dataset.number_of_frames,
+                                                  3, label.shape[2], label.shape[3])
                     # Normalize images batch wise to range of [0, 1]
                     prediction_batched = misc.normalize_0_1_batch(prediction_batched)
                     label_batched = misc.normalize_0_1_batch(label_batched)
