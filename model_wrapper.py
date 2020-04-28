@@ -229,14 +229,20 @@ class ModelWrapper(object):
             # Save models and optimizer
             if epoch % save_models_after_n_epochs == 0:
                 # Save models
-                torch.save(self.generator_network.state_dict(), 'generator_network_{}.pt'.format(epoch))
-                torch.save(self.discriminator_network.state_dict(), 'discriminator_network_{}.pt'.format(epoch))
-                torch.save(self.fft_discriminator_network.state_dict(), 'fft_discriminator_network_{}.pt'.format(epoch))
+                torch.save(self.generator_network.state_dict(),
+                           os.path.join(self.path_save_models, 'generator_network_{}.pt'.format(epoch)))
+                torch.save(self.discriminator_network.state_dict(),
+                           os.path.join(self.path_save_models, 'discriminator_network_{}.pt'.format(epoch)))
+                torch.save(self.fft_discriminator_network.state_dict(),
+                           os.path.join(self.path_save_models, 'fft_discriminator_network_{}.pt'.format(epoch)))
                 # Save optimizers
-                torch.save(self.generator_network_optimizer, 'generator_network_optimizer_{}.pt'.format(epoch))
-                torch.save(self.discriminator_network_optimizer, 'discriminator_network_optimizer_{}.pt'.format(epoch))
+                torch.save(self.generator_network_optimizer,
+                           os.path.join(self.path_save_models, 'generator_network_optimizer_{}.pt'.format(epoch)))
+                torch.save(self.discriminator_network_optimizer,
+                           os.path.join(self.path_save_models, 'discriminator_network_optimizer_{}.pt'.format(epoch)))
                 torch.save(self.fft_discriminator_network_optimizer,
-                           'fft_discriminator_network_optimizer_{}.pt'.format(epoch))
+                           os.path.join(self.path_save_models,
+                                        'fft_discriminator_network_optimizer_{}.pt'.format(epoch)))
             if epoch % validate_after_n_epochs == 0:
                 # Validation
                 self.progress_bar.set_description('Validate...')
