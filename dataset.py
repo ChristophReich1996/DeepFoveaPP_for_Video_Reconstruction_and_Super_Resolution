@@ -125,26 +125,27 @@ class REDSFovea(REDS):
         # Init probability of mask
         self.p_mask = None
 
-    def get_mask(self, new_video: bool, shape: Tuple[int, int]) -> torch.Tensor:
+    def get_mask(self, shape: Tuple[int, int]) -> torch.Tensor:
         """
         Method returns a binary fovea mask
         :param new_video: (bool) Flag if a new video is present
         :param shape: (Tuple[int, int]) Image shape
         :return: (torch.Tensor) Fovea mask
         """
-        if self.p_mask is None or new_video:
+        if self.p_mask is None:
             # Get all indexes of image
             indexes = np.stack(np.meshgrid(np.arange(0, shape[1]), np.arange(0, shape[0])), axis=0).reshape((2, -1))
-            # Make mean and cov
-            mean = np.array(
-                [np.random.uniform(0.3 * shape[0], 0.7 * shape[0]), np.random.uniform(0.3 * shape[1], 0.7 * shape[1])])
-            cov = np.array([[800.0, 0.0], [0.0, 800.0]])
-            # Get probabilities, normalize them, and add an offset
-            self.p_mask = multivariate_normal.pdf(indexes.T, mean=mean, cov=cov)
-            self.p_mask = (self.p_mask - self.p_mask.min()) / (self.p_mask.max() - self.p_mask.min())
-            self.p_mask = np.where(self.p_mask < 0.01, 0.04, self.p_mask)
+            # Make center point
+            center = np.array(
+                [np.random.uniform(50, shape[1] - 50), np.random.uniform(50, shape[0] - 50)])
+            # Calc euclidean distances
+            distances = np.linalg.norm(indexes - center.reshape((2, 1)), ord=2, axis=0)
+            # Calc probability mask
+            self.p_mask = np.where(distances < 15, 0.98, 0.0) + np.where(distances > 40, 0.05, 0.0) \
+                          + np.where(np.logical_and(distances >= 15, distances <= 40), -0.031 * distances + 1.445, 0.0)
         # Make mask
-        mask = torch.from_numpy(self.p_mask >= np.random.random(shape[0] * shape[1])).reshape((shape[0], shape[1]))
+        mask = torch.from_numpy(self.p_mask >= np.random.uniform(low=0, high=1, size=shape[0] * shape[1])).reshape(
+            (shape[0], shape[1]))
         return mask.float()
 
     @torch.no_grad()
@@ -159,6 +160,7 @@ class REDSFovea(REDS):
         if self.previously_loaded_frames is None or self.previously_loaded_frames[0].split('/')[-2] != \
                 self.data_path[item][0].split('/')[-2]:
             new_video = True
+            self.p_mask = None
         else:
             new_video = False
         # Set current data path to previously loaded frames
@@ -170,12 +172,11 @@ class REDSFovea(REDS):
             # Load images as PIL image, and convert to tensor
             image = tf.to_tensor(Image.open(frame))
             # Normalize image to a mean of zero and a std of one
-            image = image.sub_(image.mean()).div_(image.std())
+            # image = image.sub_(image.mean()).div_(image.std())
             # Downsampled frames
             image_low_res = interpolate(image[None], scale_factor=0.25, mode='bilinear', align_corners=False)[0]
             # Apply mask to image
-            image_low_res_masked = image_low_res * self.get_mask(new_video=new_video,
-                                                                 shape=(image_low_res.shape[1], image_low_res.shape[2]))
+            image_low_res_masked = image_low_res * self.get_mask(shape=(image_low_res.shape[1], image_low_res.shape[2]))
             # Crop normal image
             image = image[:, :, 128:-128]
             image = pad(image[None], pad=[0, 0, 24, 24], mode="constant", value=0)[0]
@@ -227,11 +228,10 @@ class PseudoDataset(Dataset):
 
 if __name__ == '__main__':
     dataset = REDSFovea()
-    frames_input, frames_label, _ = dataset[0]
+    frames_input, frames_label, _ = dataset[1000]
 
     import matplotlib.pyplot as plt
 
-    plt.imshow(frames_input[0].numpy())
+    plt.imshow(frames_input.numpy().transpose(1, 2, 0)[:, :, 0:3])
     plt.savefig('Input.png')
-
-    print(np.sum(frames_input[0].numpy() != 0) / frames_input[0].numel())
+    plt.show()

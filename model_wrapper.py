@@ -103,7 +103,7 @@ class ModelWrapper(object):
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
               w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0,
-              w_perceptual: float = 1.0) -> None:
+              w_perceptual: float = 1 / 2.0) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -133,9 +133,6 @@ class ModelWrapper(object):
         self.vgg_19.to(self.device)
         # Init progress bar
         self.progress_bar = tqdm(total=epochs * len(self.training_dataloader.dataset))
-        # Initial validation
-        self.progress_bar.set_description('Validate...')
-        self.validate()
         # Main loop
         for epoch in range(epochs):
             for input, label, new_sequence in self.training_dataloader:
