@@ -103,7 +103,7 @@ class ModelWrapper(object):
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
               w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0,
-              w_perceptual: float = 1 / 2.0, inference_plot_after_n_iterations: int = 600) -> None:
+              w_perceptual: float = 1 / 2.0, plot_after_n_iterations: int = 145) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -114,7 +114,7 @@ class ModelWrapper(object):
         :param w_supervised_loss: (float) Weight factor for the supervised loss
         :param w_adversarial: (float) Weight factor for adversarial generator loss
         :param w_fft_adversarial: (float) Weight factor for fft adversarial generator loss
-        :param inference_plot_after_n_iterations: (int) Make inf. plot after a given number of iterations
+        :param inference_plot_after_n_iterations: (int) Make training plot after a given number of iterations
         """
         # Log weights in hyperparameters
         self.logger.hyperparameter['w_supervised_loss'] = str(w_supervised_loss)
@@ -137,10 +137,6 @@ class ModelWrapper(object):
         # Main loop
         for epoch in range(epochs):
             for input, label, new_sequence in self.training_dataloader:
-                # Make inference plot
-                if self.progress_bar.n % inference_plot_after_n_iterations == 0:
-                    self.progress_bar.set_description('Make inference plot...')
-                    self.inference([self.validation_dataloader.dataset[index + 48][0][None] for index in range(10)])
                 # Update progress bar
                 self.progress_bar.update(n=input.shape[0])
                 # Reset gradients of networks
@@ -231,6 +227,26 @@ class ModelWrapper(object):
                 self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator.item())
                 self.logger.log(metric_name='loss_fft_discriminator',
                                 value=loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item())
+                # Plot training prediction
+                if (self.progress_bar.n - 1) % (plot_after_n_iterations + 1) == 0:
+                    prediction_batched = prediction.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
+                                                            prediction.shape[2], prediction.shape[3])
+                    label_batched = label.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
+                                                       label.shape[2], label.shape[3])
+                    # Normalize images batch wise to range of [0, 1]
+                    prediction_batched = misc.normalize_0_1_batch(prediction_batched)
+                    label_batched = misc.normalize_0_1_batch(label_batched)
+                    # Make plots
+                    torchvision.utils.save_image(
+                        prediction_batched,
+                        filename=os.path.join(self.path_save_plots,
+                                              'prediction_train_{}.png'.format(self.progress_bar.n)),
+                        nrow=self.validation_dataloader.dataset.number_of_frames)
+                    torchvision.utils.save_image(
+                        label_batched,
+                        filename=os.path.join(self.path_save_plots,
+                                              'label_train_{}.png'.format(self.progress_bar.n)),
+                        nrow=self.validation_dataloader.dataset.number_of_frames)
             # Save models and optimizer
             if epoch % save_models_after_n_epochs == 0:
                 # Save models
@@ -363,7 +379,6 @@ class ModelWrapper(object):
             sequence = sequence.to(self.device)
             # Make prediction
             prediction = self.generator_network(sequence)
-            # Make plots
             # Reshape tensors
             prediction_batched = prediction.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
                                                     prediction.shape[2], prediction.shape[3])
