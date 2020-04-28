@@ -1,4 +1,4 @@
-from typing import Callable, Union, Tuple
+from typing import Callable, Union, Tuple, List
 
 import torch
 import torch.nn as nn
@@ -103,7 +103,7 @@ class ModelWrapper(object):
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
               w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0,
-              w_perceptual: float = 1 / 2.0) -> None:
+              w_perceptual: float = 1 / 2.0, inference_plot_after_n_iterations: int = 600) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -114,6 +114,7 @@ class ModelWrapper(object):
         :param w_supervised_loss: (float) Weight factor for the supervised loss
         :param w_adversarial: (float) Weight factor for adversarial generator loss
         :param w_fft_adversarial: (float) Weight factor for fft adversarial generator loss
+        :param inference_plot_after_n_iterations: (int) Make inf. plot after a given number of iterations
         """
         # Log weights in hyperparameters
         self.logger.hyperparameter['w_supervised_loss'] = str(w_supervised_loss)
@@ -136,6 +137,10 @@ class ModelWrapper(object):
         # Main loop
         for epoch in range(epochs):
             for input, label, new_sequence in self.training_dataloader:
+                # Make inference plot
+                if self.progress_bar.n % inference_plot_after_n_iterations == 0:
+                    self.progress_bar.set_description('Make inference plot...')
+                    self.inference([self.validation_dataloader.dataset[index + 48][0][None] for index in range(10)])
                 # Update progress bar
                 self.progress_bar.update(n=input.shape[0])
                 # Reset gradients of networks
@@ -335,5 +340,36 @@ class ModelWrapper(object):
         pass
 
     @torch.no_grad()
-    def inference(self) -> None:
-        pass
+    def inference(self, sequences: List[torch.Tensor] = None) -> None:
+        """
+        Inference method generates the reconstructed image to the corresponding input and saves the input, label and
+        output as an image
+        :param sequences: (List[torch.Tensor]) List of video sequences
+        """
+        # Generator into eval mode
+        self.generator_network.eval()
+        # Model to device
+        self.generator_network.to(self.device)
+        # Reset recurrent tensor in generator
+        self.generator_network.reset_recurrent_tensor()
+        for index, sequence in enumerate(sequences):
+            # Sequence to device
+            sequence = sequence.to(self.device)
+            # Make prediction
+            prediction = self.generator_network(sequence)
+            # Make plots
+            # Reshape tensors
+            prediction_batched = prediction.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
+                                                    prediction.shape[2], prediction.shape[3])
+            # Normalize images batch wise to range of [0, 1]
+            prediction_batched = misc.normalize_0_1_batch(prediction_batched)
+            # Make plots
+            torchvision.utils.save_image(
+                prediction_batched,
+                filename=os.path.join(self.path_save_plots,
+                                      'prediction_inf_{}_{}.png'.format(index, str(datetime.now()))),
+                nrow=self.validation_dataloader.dataset.number_of_frames)
+        # Generator back into train mode
+        self.generator_network.train()
+        # Reset recurrent tensor in generator
+        self.generator_network.reset_recurrent_tensor()
