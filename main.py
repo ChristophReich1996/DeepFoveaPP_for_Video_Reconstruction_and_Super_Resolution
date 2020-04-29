@@ -23,10 +23,10 @@ if __name__ == '__main__':
     loss_function = AdaptiveRobustLoss(device='cuda:0', num_of_dimension=3 * 6 * 1024 * 768)
     # Init optimizers
     generator_network_optimizer = torch.optim.Adam(
-        list(generator_network.parameters()) + list(loss_function.parameters()), lr=3e-4, betas=(0.0, 0.95))
-    discriminator_network_optimizer = torch.optim.Adam(discriminator_network.parameters(), lr=3e-4, betas=(0.0, 0.95))
-    fft_discriminator_network_optimizer = torch.optim.Adam(fft_discriminator_network.parameters(), lr=3e-4,
-                                                           betas=(0.0, 0.95))
+        list(generator_network.parameters()) + list(loss_function.parameters()), lr=1e-3, betas=(0.1, 0.95))
+    discriminator_network_optimizer = torch.optim.Adam(discriminator_network.parameters(), lr=1e-3, betas=(0.1, 0.95))
+    fft_discriminator_network_optimizer = torch.optim.Adam(fft_discriminator_network.parameters(), lr=1e-3,
+                                                           betas=(0.1, 0.95))
     # Init model wrapper
     model_wrapper = ModelWrapper(generator_network=generator_network,
                                  discriminator_network=discriminator_network,

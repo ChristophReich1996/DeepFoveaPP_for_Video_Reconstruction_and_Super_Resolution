@@ -1,3 +1,4 @@
+from itertools import islice
 from typing import Callable, Union, Tuple, List
 
 import torch
@@ -302,7 +303,10 @@ class ModelWrapper(object):
             label = label.to(self.device)
             # Reset recurrent tensor
             if bool(new_sequence):
-                self.generator_network.reset_recurrent_tensor()
+                if isinstance(self.generator_network, nn.DataParallel):
+                    self.generator_network.module.reset_recurrent_tensor()
+                else:
+                    self.generator_network.reset_recurrent_tensor()
             # Make prediction
             prediction = self.generator_network(input)
             # Plot prediction label and input
