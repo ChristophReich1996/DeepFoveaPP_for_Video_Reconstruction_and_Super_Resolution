@@ -25,6 +25,7 @@ class ModelWrapper(object):
                  discriminator_network: Union[nn.Module, nn.DataParallel],
                  fft_discriminator_network: Union[nn.Module, nn.DataParallel],
                  vgg_19: Union[nn.Module, nn.DataParallel],
+                 pwc_net: Union[nn.Module, nn.DataParallel],
                  generator_network_optimizer: torch.optim.Optimizer,
                  discriminator_network_optimizer: torch.optim.Optimizer,
                  fft_discriminator_network_optimizer: torch.optim.Optimizer, training_dataloader: DataLoader,
@@ -32,6 +33,7 @@ class ModelWrapper(object):
                  loss_function: nn.Module = lossfunction.AdaptiveRobustLoss(device='cuda:0',
                                                                             num_of_dimension=3 * 6 * 1024 * 768),
                  perceptual_loss: nn.Module = lossfunction.PerceptualLoss(),
+                 flow_loss: nn.Module = nn.L1Loss(),
                  generator_loss: nn.Module = lossfunction.NonSaturatingLogisticGeneratorLoss(),
                  discriminator_loss: nn.Module = lossfunction.NonSaturatingLogisticDiscriminatorLoss(), device='cuda',
                  save_data_path: str = 'saved_data') -> None:
@@ -59,6 +61,7 @@ class ModelWrapper(object):
         self.discriminator_network = discriminator_network
         self.fft_discriminator_network = fft_discriminator_network
         self.vgg_19 = vgg_19
+        self.pwc_net = pwc_net
         self.generator_network_optimizer = generator_network_optimizer
         self.discriminator_network_optimizer = discriminator_network_optimizer
         self.fft_discriminator_network_optimizer = fft_discriminator_network_optimizer
@@ -67,6 +70,7 @@ class ModelWrapper(object):
         self.test_dataloader = test_dataloader
         self.loss_function = loss_function
         self.perceptual_loss = perceptual_loss
+        self.flow_loss = flow_loss
         self.generator_loss = generator_loss
         self.discriminator_loss = discriminator_loss
         self.device = device
@@ -90,6 +94,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['discriminator_network'] = str(discriminator_network)
         self.logger.hyperparameter['fft_discriminator_network'] = str(fft_discriminator_network)
         self.logger.hyperparameter['vgg_19'] = str(vgg_19)
+        self.logger.hyperparameter['pwc_net'] = str(pwc_net)
         self.logger.hyperparameter['generator_network_optimizer'] = str(generator_network)
         self.logger.hyperparameter['generator_network'] = str(generator_network_optimizer)
         self.logger.hyperparameter['discriminator_network_optimizer'] = str(discriminator_network_optimizer)
@@ -99,6 +104,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['test_dataloader'] = str(test_dataloader)
         self.logger.hyperparameter['loss_function'] = str(loss_function)
         self.logger.hyperparameter['perceptual_loss'] = str(perceptual_loss)
+        self.logger.hyperparameter['flow_loss'] = str(flow_loss)
         self.logger.hyperparameter['generator_loss'] = str(generator_loss)
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
@@ -172,7 +178,7 @@ class ModelWrapper(object):
                 (loss_supervised + loss_perceptual).backward()
                 # Optimize generator
                 self.generator_network_optimizer.step()
-                # Reset gradients of generator network and vgg 19
+                # Reset gradients of generator network
                 self.generator_network.zero_grad()
                 ############# Adversarial training #############
                 # Make prediction
@@ -192,6 +198,19 @@ class ModelWrapper(object):
                 # Optimize generator and discriminator
                 self.generator_network_optimizer.step()
                 self.discriminator_network_optimizer.step()
+                # Reset gradients of generator network
+                self.generator_network.zero_grad()
+                ############# Flow training #############
+                # Make prediction
+                prediction = self.generator_network(input.detach())
+                # Reshape prediction and label for vgg19
+                prediction_reshaped_4d = prediction.reshape(prediction.shape[0] * (prediction.shape[1] // 3), 3,
+                                                            prediction.shape[2], prediction.shape[3])
+                label_reshaped_4d = label.reshape(label.shape[0] * (label.shape[1] // 3), 3, label.shape[2],
+                                                  label.shape[3])
+                # Get flow
+                flow = self.pwc_net(prediction_reshaped_4d)
+                exit(22)
                 ############# Adversarial training (FFT) #############
                 # Make prediction
                 prediction = self.generator_network(input.detach())

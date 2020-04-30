@@ -175,9 +175,6 @@ class PWCNet(nn.Module):
         # Normalize input tensors to a range of [0, 1]
         tensorFirst = (tensorFirst - tensorFirst.min()) / (tensorFirst.max() - tensorFirst.min())
         tensorSecond = (tensorSecond - tensorSecond.min()) / (tensorSecond.max() - tensorSecond.min())
-        # Repeat tensors in feature dim to get form grayscale to 'rgb'
-        tensorFirst = torch.repeat_interleave(tensorFirst, 3, dim=1)
-        tensorSecond = torch.repeat_interleave(tensorSecond, 3, dim=1)
         # Concat tensors at feature dim
         x = torch.cat((tensorFirst, tensorSecond), dim=1)
         input_shape = (x.shape[2], x.shape[3])
@@ -270,36 +267,33 @@ class PWCNet(nn.Module):
 
 
 if __name__ == '__main__':
-    import PWCNet as PWCNetOld
+    import matplotlib.pyplot as plt
+    import dataset
+    from resample.resample2d import Resample2d
 
-    pwcNet = PWCNet().cuda()
-    pwcNet_old = PWCNetOld.PWCNet().cuda()
-    pwcNet.eval()
-    pwcNet_old.eval()
-    with torch.no_grad():
-        flow = pwcNet(
-            torch.tensor(imread('Data/Gan Data big/Gan Data/Pos_18_z0_trap_01/img_000000002_01-BF0_000_trap_01.png'))[
-            None,
-            None, :, :].cuda(), torch.tensor(
-                imread('Data/Gan Data big/Gan Data/Pos_18_z0_trap_01/img_000000003_01-BF0_000_trap_01.png')).float()[
-                                None,
-                                None, :, :].cuda())
-        flow_old = pwcNet_old(
-            torch.tensor(imread('Data/Gan Data big/Gan Data/Pos_18_z0_trap_01/img_000000002_01-BF0_000_trap_01.png'))[
-            None,
-            None, :, :].cuda(), torch.tensor(
-                imread('Data/Gan Data big/Gan Data/Pos_18_z0_trap_01/img_000000003_01-BF0_000_trap_01.png')).float()[
-                                None,
-                                None, :, :].cuda())
-    plt.imshow(flow[0, 0].cpu().detach().numpy())
+    pwc_net = PWCNet().cuda().eval()
+    dataset = dataset.REDS()
+    resample = Resample2d()
+
+    images = dataset[0][1]
+    image_1 = images[:3].unsqueeze(dim=0).cuda()
+    image_2 = images[3:6].unsqueeze(dim=0).cuda()
+
+    plt.imshow(image_1[0].detach().cpu().numpy().transpose(1, 2, 0))
     plt.show()
-    plt.imshow(flow[0, 1].cpu().detach().numpy())
+    plt.imshow(image_2[0].detach().cpu().numpy().transpose(1, 2, 0))
     plt.show()
-    plt.imshow(flow_old[0, 0].cpu().detach().numpy())
+
+    flow = pwc_net(image_1, image_2)
+
+    plt.imshow(flow.cpu().detach().numpy()[0, 0])
     plt.show()
-    plt.imshow(flow_old[0, 1].cpu().detach().numpy())
+    plt.imshow(flow.cpu().detach().numpy()[0, 1])
     plt.show()
-    plt.imshow(imread('Data/Gan Data big/Gan Data/Pos_18_z0_trap_01/img_000000002_01-BF0_000_trap_01.png'))
-    plt.show()
-    plt.imshow(imread('Data/Gan Data big/Gan Data/Pos_18_z0_trap_01/img_000000003_01-BF0_000_trap_01.png'))
+
+    image_rec = resample(image_2, flow)
+
+    print(image_rec.shape)
+
+    plt.imshow(image_rec[0].detach().cpu().numpy().transpose(1, 2, 0))
     plt.show()
