@@ -13,6 +13,7 @@ from pwc_net import PWCNet
 from model_wrapper import ModelWrapper
 from dataset import REDS, REDSFovea, REDSParallel, REDSFoveaParallel, reds_parallel_collate_fn
 from lossfunction import AdaptiveRobustLoss
+from resample.resample2d import Resample2d
 
 if __name__ == '__main__':
     # Init networks
@@ -21,6 +22,7 @@ if __name__ == '__main__':
     fft_discriminator_network = nn.DataParallel(FFTDiscriminator().cuda())
     vgg_19 = nn.DataParallel(VGG19().cuda())
     pwc_net = nn.DataParallel(PWCNet().cuda())
+    resample = nn.DataParallel(Resample2d().cuda())
     # Init adaptive loss
     loss_function = AdaptiveRobustLoss(device='cuda:0', num_of_dimension=3 * 6 * 1024 * 768)
     # Init optimizers
@@ -35,6 +37,7 @@ if __name__ == '__main__':
                                  fft_discriminator_network=fft_discriminator_network,
                                  vgg_19=vgg_19,
                                  pwc_net=pwc_net,
+                                 resample=resample,
                                  generator_network_optimizer=generator_network_optimizer,
                                  discriminator_network_optimizer=discriminator_network_optimizer,
                                  fft_discriminator_network_optimizer=fft_discriminator_network_optimizer,

@@ -171,12 +171,7 @@ class PWCNet(nn.Module):
 
         return output * mask
 
-    def forward(self, tensorFirst, tensorSecond):
-        # Normalize input tensors to a range of [0, 1]
-        tensorFirst = (tensorFirst - tensorFirst.min()) / (tensorFirst.max() - tensorFirst.min())
-        tensorSecond = (tensorSecond - tensorSecond.min()) / (tensorSecond.max() - tensorSecond.min())
-        # Concat tensors at feature dim
-        x = torch.cat((tensorFirst, tensorSecond), dim=1)
+    def forward(self, x):
         input_shape = (x.shape[2], x.shape[3])
         im1 = x[:, :3, :, :]
         im2 = x[:, 3:, :, :]

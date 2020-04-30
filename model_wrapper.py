@@ -26,6 +26,7 @@ class ModelWrapper(object):
                  fft_discriminator_network: Union[nn.Module, nn.DataParallel],
                  vgg_19: Union[nn.Module, nn.DataParallel],
                  pwc_net: Union[nn.Module, nn.DataParallel],
+                 resample: Union[nn.Module, nn.DataParallel],
                  generator_network_optimizer: torch.optim.Optimizer,
                  discriminator_network_optimizer: torch.optim.Optimizer,
                  fft_discriminator_network_optimizer: torch.optim.Optimizer, training_dataloader: DataLoader,
@@ -43,6 +44,8 @@ class ModelWrapper(object):
         :param discriminator_network: (nn.Module) Discriminator model
         :param fft_discriminator_network: (nn.Module) FFT discriminator model
         :param vgg_19: (nn.Module) Pre-trained VGG19 network
+        :param pwc_net: (nn.Module) PWC-Net for optical flow estimation
+        :param resample: (nn.Module) Resampling module
         :param generator_network_optimizer: (torch.optim.Optimizer) Generator optimizer module
         :param discriminator_network_optimizer: (torch.optim.Optimizer) Discriminator optimizer
         :param fft_discriminator_network_optimizer: (torch.optim.Optimizer) FFT discriminator model
@@ -51,6 +54,7 @@ class ModelWrapper(object):
         :param test_dataloader: (DataLoader) Test dataloader including the test dataset
         :param loss_function: (nn.Module) Main supervised loss function
         :param perceptual_loss: (nn.Module) Perceptual loss function which takes two lists of tensors as input
+        :param flow_loss: (nn.Module) Flow loss function
         :param generator_loss: (nn.Module) Adversarial generator loss function
         :param discriminator_loss: (nn.Module) Adversarial discriminator loss function
         :param device: (str) Device to be utilized (cpu not available if deformable convolutions are utilized)
@@ -62,6 +66,7 @@ class ModelWrapper(object):
         self.fft_discriminator_network = fft_discriminator_network
         self.vgg_19 = vgg_19
         self.pwc_net = pwc_net
+        self.resample = resample
         self.generator_network_optimizer = generator_network_optimizer
         self.discriminator_network_optimizer = discriminator_network_optimizer
         self.fft_discriminator_network_optimizer = fft_discriminator_network_optimizer
@@ -95,6 +100,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['fft_discriminator_network'] = str(fft_discriminator_network)
         self.logger.hyperparameter['vgg_19'] = str(vgg_19)
         self.logger.hyperparameter['pwc_net'] = str(pwc_net)
+        self.logger.hyperparameter['resample'] = str(resample)
         self.logger.hyperparameter['generator_network_optimizer'] = str(generator_network)
         self.logger.hyperparameter['generator_network'] = str(generator_network_optimizer)
         self.logger.hyperparameter['discriminator_network_optimizer'] = str(discriminator_network_optimizer)
@@ -110,7 +116,7 @@ class ModelWrapper(object):
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
               w_supervised_loss: float = 1.0, w_adversarial: float = 1.0, w_fft_adversarial: float = 1.0,
-              w_perceptual: float = 1.0, plot_after_n_iterations: int = 144) -> None:
+              w_perceptual: float = 1.0, w_flow: float = 1.0, plot_after_n_iterations: int = 144) -> None:
         """
         Train method
         Note: GPU memory issues if all losses are computed at one. Solution: Calc losses independently. Drawback:
@@ -121,6 +127,8 @@ class ModelWrapper(object):
         :param w_supervised_loss: (float) Weight factor for the supervised loss
         :param w_adversarial: (float) Weight factor for adversarial generator loss
         :param w_fft_adversarial: (float) Weight factor for fft adversarial generator loss
+        :param w_perceptual: (float) Weight factor for perceptual loss
+        :param w_flow: (float) Weight factor for flow loss
         :param inference_plot_after_n_iterations: (int) Make training plot after a given number of iterations
         """
         # Log weights in hyperparameters
@@ -128,10 +136,13 @@ class ModelWrapper(object):
         self.logger.hyperparameter['w_adversarial'] = str(w_adversarial)
         self.logger.hyperparameter['w_fft_adversarial'] = str(w_fft_adversarial)
         self.logger.hyperparameter['w_perceptual'] = str(w_perceptual)
+        self.logger.hyperparameter['w_flow'] = str(w_flow)
         # Model into training mode
         self.generator_network.train()
         self.discriminator_network.train()
         self.fft_discriminator_network.train()
+        # PWC-Net into eval mode
+        self.pwc_net.eval()
         # Vgg into eval mode
         self.vgg_19.eval()
         # Models to device
@@ -206,11 +217,22 @@ class ModelWrapper(object):
                 # Reshape prediction and label for vgg19
                 prediction_reshaped_4d = prediction.reshape(prediction.shape[0] * (prediction.shape[1] // 3), 3,
                                                             prediction.shape[2], prediction.shape[3])
-                label_reshaped_4d = label.reshape(label.shape[0] * (label.shape[1] // 3), 3, label.shape[2],
-                                                  label.shape[3])
+                prediction_pair = torch.cat((prediction_reshaped_4d[:-1].detach(), prediction_reshaped_4d[1:].detach()),
+                                            dim=1)
                 # Get flow
-                flow = self.pwc_net(prediction_reshaped_4d)
-                exit(22)
+                with torch.no_grad():
+                    flow = self.pwc_net(prediction_pair)
+                    # Get resampled images
+                    resampled_images = self.resample(prediction_reshaped_4d[1:], flow)
+                # Calc flow loss
+                loss_flow = self.flow_loss(prediction_reshaped_4d[:-1], resampled_images)
+                # Calc gradients
+                loss_flow.backward()
+                # Optimizer generator
+                # Optimize generator and discriminator
+                self.generator_network_optimizer.step()
+                # Reset gradients of generator network
+                self.generator_network.zero_grad()
                 ############# Adversarial training (FFT) #############
                 # Make prediction
                 prediction = self.generator_network(input.detach())
@@ -231,10 +253,10 @@ class ModelWrapper(object):
                 self.fft_discriminator_network_optimizer.step()
                 # Update progress bar
                 self.progress_bar.set_description(
-                    'SV Loss={:.4f}, P Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
+                    'SV Loss={:.4f}, P Loss={:.4f}, F Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
                         .format(loss_supervised.item(), loss_perceptual.item(), loss_generator.item(),
                                 loss_discriminator_real.item() + loss_discriminator_fake.item(),
-                                loss_fft_generator.item(),
+                                loss_flow.item(), loss_fft_generator.item(),
                                 loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item()))
                 # Log losses
                 self.logger.log(metric_name='training_iteration', value=self.progress_bar.n)
@@ -244,6 +266,7 @@ class ModelWrapper(object):
                 self.logger.log(metric_name='loss_generator', value=loss_generator.item())
                 self.logger.log(metric_name='loss_discriminator',
                                 value=loss_discriminator_real.item() + loss_discriminator_fake.item())
+                self.logger.log(metric_name='loss_flow', value=loss_flow.item())
                 self.logger.log(metric_name='loss_fft_generator', value=loss_fft_generator.item())
                 self.logger.log(metric_name='loss_fft_discriminator',
                                 value=loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item())
@@ -295,6 +318,8 @@ class ModelWrapper(object):
             self.logger.save_metrics(self.path_save_metrics)
         # Close progress bar
         self.progress_bar.close()
+        # Save logs finally
+        self.logger.save_metrics(self.path_save_metrics)
 
     @torch.no_grad()
     def validate(self,
