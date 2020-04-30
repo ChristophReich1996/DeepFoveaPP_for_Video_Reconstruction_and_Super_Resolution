@@ -149,8 +149,9 @@ class REDSFovea(REDS):
             # Calc euclidean distances
             distances = np.linalg.norm(indexes - center.reshape((2, 1)), ord=2, axis=0)
             # Calc probability mask
-            self.p_mask = np.where(distances < 15, 0.98, 0.0) + np.where(distances > 40, 0.05, 0.0) \
-                          + np.where(np.logical_and(distances >= 15, distances <= 40), -0.031 * distances + 1.445, 0.0)
+            m, b = np.linalg.pinv(np.array([[20, 1], [45, 1]])) @ np.array([[0.98], [0.15]])
+            self.p_mask = np.where(distances < 20, 0.98, 0.0) + np.where(distances > 40, 0.15, 0.0) \
+                          + np.where(np.logical_and(distances >= 20, distances <= 40), m * distances + b, 0.0)
         # Make mask
         mask = torch.from_numpy(self.p_mask >= np.random.uniform(low=0, high=1, size=shape[0] * shape[1])).reshape(
             (shape[0], shape[1]))
@@ -330,11 +331,11 @@ class PseudoDataset(Dataset):
 
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
-    import matplotlib.pyplot as plt
 
     dataset = DataLoader(REDSFoveaParallel(), shuffle=False, num_workers=1, batch_size=2,
                          collate_fn=reds_parallel_collate_fn)
-
+    print(dataset.dataset.__len__())
     counter = 0
     for input, label, new_video in dataset:
-        print(new_video)
+        print(torch.sum((input != 0).float()) / input.numel())
+        print(torch.sum((input != 0).float()) / label.numel())
