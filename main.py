@@ -24,7 +24,7 @@ if __name__ == '__main__':
     pwc_net = nn.DataParallel(PWCNet().cuda())
     resample = nn.DataParallel(Resample2d().cuda())
     # Init adaptive loss
-    loss_function = AdaptiveRobustLoss(device='cuda:0', num_of_dimension=3 * 6 * 1024 * 768)
+    loss_function = AdaptiveRobustLoss(device='cuda:0', num_of_dimension=3 * 6 * 768 * 1024)
     # Init optimizers
     generator_network_optimizer = torch.optim.Adam(
         list(generator_network.parameters()) + list(loss_function.parameters()), lr=3e-4, betas=(0.1, 0.95))
@@ -50,4 +50,4 @@ if __name__ == '__main__':
                                      num_workers=1),
                                  test_dataloader=None)
     # Perform training
-    model_wrapper.train(epochs=10)
+    model_wrapper.train(epochs=20)

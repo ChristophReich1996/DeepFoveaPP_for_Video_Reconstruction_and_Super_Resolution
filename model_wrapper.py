@@ -325,7 +325,7 @@ class ModelWrapper(object):
     def validate(self,
                  validation_metrics: Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]
                  = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim),
-                 sequences_to_plot: Tuple[int, ...] = (1, 2, 3, 4)) -> None:
+                 sequences_to_plot: Tuple[int, ...] = (1, 2, 3, 4, 76, 83, 124, 150, 220, 432)) -> None:
         """
         Validation method which produces validation metrics and plots
         :param validation_metrics: (Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]) Tuple
