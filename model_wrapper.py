@@ -418,11 +418,12 @@ class ModelWrapper(object):
         pass
 
     @torch.no_grad()
-    def inference(self, sequences: List[torch.Tensor] = None) -> None:
+    def inference(self, sequences: List[torch.Tensor] = None, apply_fovea_filter: bool = True) -> None:
         """
         Inference method generates the reconstructed image to the corresponding input and saves the input, label and
         output as an image
         :param sequences: (List[torch.Tensor]) List of video sequences
+        :param apply_fovea_filter: (bool) If true the fovea filter is applied to the input sequence
         """
         # Generator into eval mode
         self.generator_network.eval()
@@ -431,6 +432,17 @@ class ModelWrapper(object):
         # Reset recurrent tensor in generator
         self.generator_network.reset_recurrent_tensor()
         for index, sequence in enumerate(sequences):
+            # Apply fovea mask if utilized
+            if apply_fovea_filter:
+                if index == 0:
+                    # Get fovea mask and probability mask
+                    fovea_mask, p_mask = misc.get_fovea_mask((sequence.shape[2], sequence.shape[3]), return_p_mask=True)
+                else:
+                    # Get fovea mask
+                    fovea_mask = misc.get_fovea_mask((sequence.shape[2], sequence.shape[3]), p_mask=p_mask,
+                                                     return_p_mask=False)
+                # Apply fovea mask
+                sequence = sequence * fovea_mask.view(1, 1, sequence.shape[2], sequence.shape[3])
             # Sequence to device
             sequence = sequence.to(self.device)
             # Make prediction
