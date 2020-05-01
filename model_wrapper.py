@@ -201,6 +201,10 @@ class ModelWrapper(object):
                 # Calc gradients and retain graph of generator gradients
                 loss_discriminator_fake.backward(retain_graph=True)
                 loss_discriminator_real.backward()
+                # Optimize discriminator
+                self.discriminator_network_optimizer.step()
+                # Reset gradients of generator
+                self.generator_network.zero_grad()
                 # Calc generator loss
                 loss_generator = w_adversarial * self.generator_loss(
                     self.discriminator_network(prediction))
@@ -208,10 +212,9 @@ class ModelWrapper(object):
                 loss_generator.backward()
                 # Optimize generator and discriminator
                 self.generator_network_optimizer.step()
-                self.discriminator_network_optimizer.step()
+                ############# Flow training #############
                 # Reset gradients of generator network
                 self.generator_network.zero_grad()
-                ############# Flow training #############
                 # Make prediction
                 prediction = self.generator_network(input.detach())
                 # Reshape prediction and label for vgg19
@@ -243,14 +246,17 @@ class ModelWrapper(object):
                 # Calc gradients and retain graph of generator gradients
                 loss_fft_discriminator_fake.backward(retain_graph=True)
                 loss_fft_discriminator_real.backward()
+                # Optimize discriminator
+                self.fft_discriminator_network_optimizer.step()
+                # Reset grad of generator
+                self.generator_network.zero_grad()
                 # Calc generator loss
                 loss_fft_generator = w_fft_adversarial * self.generator_loss(
                     self.fft_discriminator_network(prediction))
                 # Calc gradients
                 loss_fft_generator.backward()
-                # Optimize generator and discriminator
+                # Optimize generator
                 self.generator_network_optimizer.step()
-                self.fft_discriminator_network_optimizer.step()
                 # Update progress bar
                 self.progress_bar.set_description(
                     'SV Loss={:.4f}, P Loss={:.4f}, F Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
