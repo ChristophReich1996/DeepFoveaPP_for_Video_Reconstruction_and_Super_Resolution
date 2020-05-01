@@ -233,7 +233,6 @@ class ModelWrapper(object):
                 # Calc gradients
                 loss_flow.backward()
                 # Optimizer generator
-                # Optimize generator and discriminator
                 self.generator_network_optimizer.step()
                 # Reset gradients of generator network
                 self.generator_network.zero_grad()
@@ -260,10 +259,13 @@ class ModelWrapper(object):
                 self.generator_network_optimizer.step()
                 # Update progress bar
                 self.progress_bar.set_description(
-                    'SV Loss={:.4f}, P Loss={:.4f}, F Loss={:.4f}, Adv. G. Loss={:.4f}, Adv. D. Loss={:.4f}, Adv. FFT G. Loss={:.4f}, Adv. FFT D. Loss={:.4f}'
-                        .format(loss_supervised.item(), loss_perceptual.item(), loss_generator.item(),
+                    'SV Loss={:.3f}, P Loss={:.3f}, F Loss={:.3f}, A.G. Loss={:.3f}, A.D. Loss={:.3f}, A.FFT G. Loss={:.3f}, A.FFT D. Loss={:.3f}'
+                        .format(loss_supervised.item(),
+                                loss_perceptual.item(),
+                                loss_flow.item(),
+                                loss_generator.item(),
                                 loss_discriminator_real.item() + loss_discriminator_fake.item(),
-                                loss_flow.item(), loss_fft_generator.item(),
+                                loss_fft_generator.item(),
                                 loss_fft_discriminator_real.item() + loss_fft_discriminator_fake.item()))
                 # Log losses
                 self.logger.log(metric_name='training_iteration', value=self.progress_bar.n)
