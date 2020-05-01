@@ -198,10 +198,9 @@ class ModelWrapper(object):
                 # Calc discriminator loss
                 loss_discriminator_real, loss_discriminator_fake = self.discriminator_loss(
                     self.discriminator_network(label),
-                    self.discriminator_network(prediction))
-                # Calc gradients and retain graph of generator gradients
-                loss_discriminator_fake.backward(retain_graph=True)
-                loss_discriminator_real.backward()
+                    self.discriminator_network(prediction.detach()))
+                # Calc gradients
+                (loss_discriminator_fake + loss_discriminator_real).backward()
                 # Optimize discriminator
                 self.discriminator_network_optimizer.step()
                 # Reset gradients of generator
@@ -242,10 +241,9 @@ class ModelWrapper(object):
                 # Calc discriminator loss
                 loss_fft_discriminator_real, loss_fft_discriminator_fake = self.discriminator_loss(
                     self.fft_discriminator_network(label),
-                    self.fft_discriminator_network(prediction))
-                # Calc gradients and retain graph of generator gradients
-                loss_fft_discriminator_fake.backward(retain_graph=True)
-                loss_fft_discriminator_real.backward()
+                    self.fft_discriminator_network(prediction.detach()))
+                # Calc gradients
+                (loss_fft_discriminator_fake + loss_fft_discriminator_real).backward()
                 # Optimize discriminator
                 self.fft_discriminator_network_optimizer.step()
                 # Reset grad of generator
