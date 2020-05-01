@@ -35,8 +35,8 @@ class ModelWrapper(object):
                                                                             num_of_dimension=3 * 6 * 1024 * 768),
                  perceptual_loss: nn.Module = lossfunction.PerceptualLoss(),
                  flow_loss: nn.Module = nn.L1Loss(),
-                 generator_loss: nn.Module = lossfunction.WassersteinGeneratorLoss(),
-                 discriminator_loss: nn.Module = lossfunction.WassersteinDiscriminatorLoss(),
+                 generator_loss: nn.Module = lossfunction.NonSaturatingLogisticGeneratorLoss(),
+                 discriminator_loss: nn.Module = lossfunction.NonSaturatingLogisticDiscriminatorLoss(),
                  device='cuda', save_data_path: str = 'saved_data') -> None:
         """
         Constructor method
@@ -115,8 +115,8 @@ class ModelWrapper(object):
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
-              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0 / 100.0,
-              w_fft_adversarial: float = 1.0 / 100.0, w_perceptual: float = 1.0, w_flow: float = 1.0,
+              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0,
+              w_fft_adversarial: float = 1.0, w_perceptual: float = 1.0, w_flow: float = 1.0,
               plot_after_n_iterations: int = 144) -> None:
         """
         Train method
