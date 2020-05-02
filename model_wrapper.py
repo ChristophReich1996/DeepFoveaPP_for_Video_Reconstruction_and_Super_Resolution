@@ -32,11 +32,11 @@ class ModelWrapper(object):
                  fft_discriminator_network_optimizer: torch.optim.Optimizer, training_dataloader: DataLoader,
                  validation_dataloader: DataLoader, test_dataloader: DataLoader,
                  loss_function: nn.Module = lossfunction.AdaptiveRobustLoss(device='cuda:0',
-                                                                            num_of_dimension=3 * 6 * 1024 * 768),
+                                                                            num_of_dimension=3 * 6 * 768 * 1024),
                  perceptual_loss: nn.Module = lossfunction.PerceptualLoss(),
                  flow_loss: nn.Module = nn.L1Loss(),
-                 generator_loss: nn.Module = lossfunction.NonSaturatingLogisticGeneratorLoss(),
-                 discriminator_loss: nn.Module = lossfunction.NonSaturatingLogisticDiscriminatorLoss(),
+                 generator_loss: nn.Module = lossfunction.WassersteinGeneratorLoss(),
+                 discriminator_loss: nn.Module = lossfunction.WassersteinDiscriminatorLoss(),
                  device='cuda', save_data_path: str = 'saved_data') -> None:
         """
         Constructor method
@@ -115,8 +115,8 @@ class ModelWrapper(object):
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
-              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0,
-              w_fft_adversarial: float = 1.0, w_perceptual: float = 1.0, w_flow: float = 1.0,
+              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0 / 1000,
+              w_fft_adversarial: float = 1.0 / 1000, w_perceptual: float = 1.0, w_flow: float = 1.0,
               plot_after_n_iterations: int = 144) -> None:
         """
         Train method
