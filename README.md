@@ -40,9 +40,8 @@ of the PyTorch [FlowNet2](https://github.com/NVIDIA/flownet2-pytorch/tree/master
 implementation by Nvidia. To install the packages run `python setup.py install` for each package. The setup.py file
 is located in the corresponding folder.
 
-All required packages can be found in [requirements.txt](requirements.txt).
-
-To install all dependencies simply run `pip install -r requirements.txt`
+All additional required packages can be found in [requirements.txt](requirements.txt).
+To install the additional required packages simply run `pip install -r requirements.txt`.
 
 ## Results
 
