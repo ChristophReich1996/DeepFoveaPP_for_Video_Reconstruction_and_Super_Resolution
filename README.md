@@ -10,9 +10,11 @@ paper by Anton S. Kaplanyan et al. (facebook research).
 ![Losses](img/losses.png)
 [Source](https://github.com/facebookresearch/DeepFovea)
 
-To reach the desired super-resolution two additional blocks are used, in the end of the generator network. This so
-called super-resolution blocks are based on two (for the final block three) 
-[deformable convolutions](https://arxiv.org/abs/1811.11168).
+To reach the desired super-resolution (4 times higher than the input) two additional blocks are used, in the end of the 
+generator network. This so called super-resolution blocks are based on two (for the final block three) 
+[deformable convolutions](https://arxiv.org/abs/1811.11168) and an bilinear upsampling.
+
+## Losses
 
 ## Dependencies
 
