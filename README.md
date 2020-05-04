@@ -22,6 +22,14 @@ by [Jonathan T. Barron](https://github.com/jonbarron/robust_loss_pytorch). Furth
 [deformable convolutions V2](https://arxiv.org/abs/1811.11168) are used in the generator network. 
 Therefor the [implementation](https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch/tree/pytorch_1.0.0) 
 of [Dazhi Cheng](https://github.com/chengdazhi) is utilized.
+For the [PWC-Net](https://github.com/NVlabs/PWC-Net/tree/master/PyTorch) 
+the implementation and pre-trained weights of [Nvidia Research](https://github.com/NVlabs) is used. 
+Additionally the PWC-Net and the flow loss implementation depends on the 
+[correlation](https://github.com/NVIDIA/flownet2-pytorch/tree/master/networks/correlation_package), and 
+[resample](https://github.com/NVIDIA/flownet2-pytorch/tree/master/networks/resample2d_package) package 
+of the PyTorch [FlowNet2](https://github.com/NVIDIA/flownet2-pytorch/tree/master/networks) 
+implementation by Nvidia. To install the packages run 'python setup.py install' for each package. The setup.py file
+is located in the corresponding folder.
 
 All required packages can be found in [requirements.txt](requirements.txt).
 
@@ -31,3 +39,5 @@ To install all dependencies simply run `pip install -r requirements.txt`
 ![Generator model](img/g_model.png)
 ![Losses](img/losses.png)
 [Source](https://github.com/facebookresearch/DeepFovea)
+
+## Results
