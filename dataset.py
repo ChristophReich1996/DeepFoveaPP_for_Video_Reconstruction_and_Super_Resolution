@@ -339,3 +339,4 @@ if __name__ == '__main__':
     for input, label, new_video in dataset:
         print(torch.sum((input != 0).float()) / input.numel())
         print(torch.sum((input != 0).float()) / label.numel())
+        exit(22)

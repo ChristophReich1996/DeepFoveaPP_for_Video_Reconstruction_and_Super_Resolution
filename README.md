@@ -48,8 +48,14 @@ To install the additional required packages simply run `pip install -r requireme
 Results of the training run started at the 02.05.2020. For this training run the recurrent tensor of each temporal block 
 was reset after each full video.
 
+We sampled approximately 19% of the low resolution (192 X 256) input image, when apply the fovea sampling. This 19% 
+corresponds to 1.2% when compared to the high resolution (768 X 1024) label.
+
 ![plots02052020input](results/2020-05-02/plots/input_220_2020-05-04%2011_17_59.593499.png)
+Low resolution (192 X 256) fovea sampled input image
 ![plots02052020pred](results/2020-05-02/plots/prediction_220_2020-05-04%2011_17_55.343509.png)
+High resolution (768 X 1024) reconstructed prediction of the generator
 ![plots02052020label](results/2020-05-02/plots/label_220_2020-05-04%2011_17_57.695080.png)
+High resolution (768 X 1024) label
 
 The corresponding pre-trained models, additional plots and all metrics can be found in the folder: `results/2020-05-02`
