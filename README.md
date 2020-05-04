@@ -16,6 +16,13 @@ generator network. This so called super-resolution blocks are based on two (for 
 
 ## Losses
 
+We applied the same losses as the paper, but we also added a supervised loss. For this supervised loss, the adaptive 
+robust loss function by Jonathan T. Barron was chosen.
+
+<img src="https://render.githubusercontent.com/render/math?math=L_{G}=w_{sv}\cdot L_{sv} %2B w_{LPIPS}\cdot L_{LPIPS} %2B w_{flow}\cdot L_{flow} %2B w_{adv}\cdot L_{adv}">
+
+We compute each loss independent, since otherwise we run into a VRAM issue (Tesla V100 16GB).
+
 ## Dependencies
 
 This implementation used the [adaptive robust loss](https://arxiv.org/abs/1701.03077) 
