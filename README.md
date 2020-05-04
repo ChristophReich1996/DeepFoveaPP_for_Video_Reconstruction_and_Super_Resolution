@@ -43,6 +43,16 @@ is located in the corresponding folder.
 All additional required packages can be found in [requirements.txt](requirements.txt).
 To install the additional required packages simply run `pip install -r requirements.txt`.
 
+### Full installation
+
+```shell script
+git clone https://github.com/ChristophReich1996/Deep_Fovea_Architecture_for_Video_Super_Resolution
+cd Deep_Fovea_Architecture_for_Video_Super_Resolution
+pip install -r requirements.txt
+python correlation/setup.py install
+python resample/setup.py install
+```
+
 ## Results
 
 We sampled approximately **19.7%** of the low resolution (192 X 256) input image, when apply the fovea sampling. This 19.7% 
@@ -59,4 +69,4 @@ High resolution (768 X 1024) reconstructed prediction of the generator
 High resolution (768 X 1024) label
 
 The corresponding pre-trained models, additional plots and all metrics can be found in the folder 
-[results/2020-05-02](results/2020-05-02)
+[results/2020-05-02](results/2020-05-02).
