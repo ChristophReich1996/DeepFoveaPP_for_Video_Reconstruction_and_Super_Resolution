@@ -58,4 +58,5 @@ High resolution (768 X 1024) reconstructed prediction of the generator
 ![plots02052020label](results/2020-05-02/plots/label_220_2020-05-04%2011_17_57.695080.png)
 High resolution (768 X 1024) label
 
-The corresponding pre-trained models, additional plots and all metrics can be found in the folder: `results/2020-05-02`
+The corresponding pre-trained models, additional plots and all metrics can be found in the folder 
+[results/2020-05-02](results/2020-05-02)
