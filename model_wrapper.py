@@ -167,11 +167,13 @@ class ModelWrapper(object):
                 input = input.to(self.device)
                 label = label.to(self.device)
                 # Reset recurrent tensor
+                '''
                 if bool(new_sequence):
                     if isinstance(self.generator_network, nn.DataParallel):
                         self.generator_network.module.reset_recurrent_tensor()
                     else:
                         self.generator_network.reset_recurrent_tensor()
+                '''
                 ############# Supervised training (+ perceptrual training) #############
                 # Make prediction
                 prediction = self.generator_network(input.detach())
@@ -353,11 +355,13 @@ class ModelWrapper(object):
             input = input.to(self.device)
             label = label.to(self.device)
             # Reset recurrent tensor
+            '''
             if bool(new_sequence):
                 if isinstance(self.generator_network, nn.DataParallel):
                     self.generator_network.module.reset_recurrent_tensor()
                 else:
                     self.generator_network.reset_recurrent_tensor()
+            '''
             # Make prediction
             prediction = self.generator_network(input)
             # Plot prediction label and input
@@ -430,7 +434,7 @@ class ModelWrapper(object):
         # Model to device
         self.generator_network.to(self.device)
         # Reset recurrent tensor in generator
-        self.generator_network.reset_recurrent_tensor()
+        # self.generator_network.reset_recurrent_tensor()
         for index, sequence in enumerate(sequences):
             # Apply fovea mask if utilized
             if apply_fovea_filter:
@@ -461,4 +465,4 @@ class ModelWrapper(object):
         # Generator back into train mode
         self.generator_network.train()
         # Reset recurrent tensor in generator
-        self.generator_network.reset_recurrent_tensor()
+        # self.generator_network.reset_recurrent_tensor()
