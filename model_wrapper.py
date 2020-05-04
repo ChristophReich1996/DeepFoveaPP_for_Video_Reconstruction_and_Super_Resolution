@@ -115,8 +115,8 @@ class ModelWrapper(object):
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
-              w_supervised_loss: float = 1.0, w_adversarial: float = 1.0 / 100,
-              w_fft_adversarial: float = 1.0 / 100, w_perceptual: float = 1.0, w_flow: float = 1.0,
+              w_supervised_loss: float = 5.0, w_adversarial: float = 1.0 / 100,
+              w_fft_adversarial: float = 1.0 / 100, w_perceptual: float = 1.0, w_flow: float = 2.0,
               plot_after_n_iterations: int = 144) -> None:
         """
         Train method
