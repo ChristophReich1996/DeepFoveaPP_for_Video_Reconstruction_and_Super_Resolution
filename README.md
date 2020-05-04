@@ -2,7 +2,7 @@
 
 This repository tries to solve the task of fovea sampled reconstruction and video super resolution with partly based on the
 architecture of the [Deep Fovea](https://research.fb.com/wp-content/uploads/2019/11/DeepFovea-Neural-Reconstruction-for-Foveated-Rendering-and-Video-Compression-using-Learned-Statistics-of-Natural-Videos.pdf?) 
-paper by Anton S. Kaplanyan et al. (facebook research).
+paper by Anton S. Kaplanyan et al. ([facebook research](https://research.fb.com/)).
 
 ## Model Architecture
 
