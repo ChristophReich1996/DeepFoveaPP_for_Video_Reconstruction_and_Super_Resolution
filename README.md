@@ -4,15 +4,11 @@ This repository tries to solve the task of video super resolution with main arch
 [Deep Fovea](https://research.fb.com/wp-content/uploads/2019/11/DeepFovea-Neural-Reconstruction-for-Foveated-Rendering-and-Video-Compression-using-Learned-Statistics-of-Natural-Videos.pdf?) 
 paper by Anton S. Kaplanyan et al. (facebook research).
 
-## TODO
+## Model Architecture
 
-* **Done** (REDS ~40GB) Find dataset ([youtube 8M](https://research.google.com/youtube8m/), [cityscapes](https://www.cityscapes-dataset.com/) or [REDS](https://seungjunnah.github.io/Datasets/reds.html))
-* **Done** Implement dataset class for chosen dataset
-* **Done** Implement [PSNR](https://en.wikipedia.org/wiki/Peak_signal-to-noise_ratio) and [SSIM](https://en.wikipedia.org/wiki/Structural_similarity)
-* **Done** Implement validation method (L1, L2, PSNR and SSIM)
-* Implement test method
-* **Done** Implement inference method
-* Analyse results and HPO if needed ;)
+![Generator model](img/g_model.png)
+![Losses](img/losses.png)
+[Source](https://github.com/facebookresearch/DeepFovea)
 
 ## Dependencies
 
@@ -28,16 +24,20 @@ Additionally the PWC-Net and the flow loss implementation depends on the
 [correlation](https://github.com/NVIDIA/flownet2-pytorch/tree/master/networks/correlation_package), and 
 [resample](https://github.com/NVIDIA/flownet2-pytorch/tree/master/networks/resample2d_package) package 
 of the PyTorch [FlowNet2](https://github.com/NVIDIA/flownet2-pytorch/tree/master/networks) 
-implementation by Nvidia. To install the packages run 'python setup.py install' for each package. The setup.py file
+implementation by Nvidia. To install the packages run `python setup.py install` for each package. The setup.py file
 is located in the corresponding folder.
 
 All required packages can be found in [requirements.txt](requirements.txt).
 
 To install all dependencies simply run `pip install -r requirements.txt`
 
-## Model Architecture
-![Generator model](img/g_model.png)
-![Losses](img/losses.png)
-[Source](https://github.com/facebookresearch/DeepFovea)
-
 ## Results
+
+Results of the training run started at the 02.05.2020. For this training run the recurrent tensor of each temporal block 
+was reset after each full video.
+
+![plots02052020input](results/2020-05-02/plots/input_220_2020-05-04%2011_17_59.593499.png)
+![plots02052020pred](results/2020-05-02/plots/prediction_220_2020-05-04%2011_17_55.343509.png)
+![plots02052020label](results/2020-05-02/plots/label_220_2020-05-04%2011_17_57.695080.png)
+
+The corresponding pre-trained models, additional plots and all metrics can be found in the folder: `results/2020-05-02`
