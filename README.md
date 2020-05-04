@@ -70,3 +70,38 @@ High resolution (768 X 1024) label
 
 The corresponding pre-trained models, additional plots and all metrics can be found in the folder 
 [results/2020-05-02](results/2020-05-02).
+
+## References
+
+```
+@article{kaplanyan2019deepfovea,
+  title={DeepFovea: neural reconstruction for foveated rendering and video compression using learned statistics of natural videos},
+  author={Kaplanyan, Anton S and Sochenov, Anton and Leimk{\"u}hler, Thomas and Okunev, Mikhail and Goodall, Todd and Rufo, Gizem},
+  journal={ACM Transactions on Graphics (TOG)},
+  volume={38},
+  number={6},
+  pages={1--13},
+  year={2019},
+  publisher={ACM New York, NY, USA}
+}
+```
+
+```
+@inproceedings{deformableconv,
+  title={Deformable convnets v2: More deformable, better results},
+  author={Zhu, Xizhou and Hu, Han and Lin, Stephen and Dai, Jifeng},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={9308--9316},
+  year={2019}
+}
+```
+
+```
+@InProceedings{REDS,
+    author = {Nah, Seungjun and Baik, Sungyong and Hong, Seokil and Moon, Gyeongsik and Son, Sanghyun and Timofte, Radu and Lee, Kyoung Mu},
+    title = {NTIRE 2019 Challenge on Video Deblurring and Super-Resolution: Dataset and Study},
+    booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops},
+    month = {June},
+    year = {2019}
+}
+```
