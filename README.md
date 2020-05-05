@@ -73,7 +73,7 @@ The corresponding pre-trained models, additional plots and all metrics can be fo
 
 ## References
 
-```
+```bibtex
 [1] @article{deepfovea,
     title={DeepFovea: neural reconstruction for foveated rendering and video compression using learned statistics of natural videos},
     author={Kaplanyan, Anton S and Sochenov, Anton and Leimk{\"u}hler, Thomas and Okunev, Mikhail and Goodall, Todd and Rufo, Gizem},
@@ -86,7 +86,7 @@ The corresponding pre-trained models, additional plots and all metrics can be fo
 }
 ```
 
-```
+```bibtex
 [2] @inproceedings{deformableconv2,
     title={Deformable convnets v2: More deformable, better results},
     author={Zhu, Xizhou and Hu, Han and Lin, Stephen and Dai, Jifeng},
@@ -96,7 +96,7 @@ The corresponding pre-trained models, additional plots and all metrics can be fo
 }
 ```
 
-```
+```bibtex
 [3] @InProceedings{reds,
     author = {Nah, Seungjun and Baik, Sungyong and Hong, Seokil and Moon, Gyeongsik and Son, Sanghyun and Timofte, Radu and Lee, Kyoung Mu},
     title = {NTIRE 2019 Challenge on Video Deblurring and Super-Resolution: Dataset and Study},
@@ -106,7 +106,7 @@ The corresponding pre-trained models, additional plots and all metrics can be fo
 }
 ```
 
-```
+```bibtex
 [4] @inproceedings{adaptiveroubustloss,
     title={A general and adaptive robust loss function},
     author={Barron, Jonathan T},
@@ -116,7 +116,7 @@ The corresponding pre-trained models, additional plots and all metrics can be fo
 }
 ```
 
-```
+```bibtex
 [5] @inproceedings{flownet2,
     title={Flownet 2.0: Evolution of optical flow estimation with deep networks},
     author={Ilg, Eddy and Mayer, Nikolaus and Saikia, Tonmoy and Keuper, Margret and Dosovitskiy, Alexey and Brox, Thomas},
@@ -126,7 +126,7 @@ The corresponding pre-trained models, additional plots and all metrics can be fo
 }
 ```
 
-```
+```bibtex
 [6] @inproceedings{pwcnet,
     title={Pwc-net: Cnns for optical flow using pyramid, warping, and cost volume},
     author={Sun, Deqing and Yang, Xiaodong and Liu, Ming-Yu and Kautz, Jan},
