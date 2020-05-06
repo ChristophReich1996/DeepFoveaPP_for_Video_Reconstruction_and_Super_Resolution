@@ -1,0 +1,1 @@
+Not reset recurrent tensor after each video!
