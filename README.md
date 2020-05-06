@@ -78,7 +78,7 @@ High resolution (768 X 1024) reconstructed prediction of the generator
 ![plots04052020label](results/2020-05-04/plots/label_220_2020-05-06%2009_57_20.556501.png)
 High resolution (768 X 1024) label [3]
 
-Table of validation metrics (Test set not published yet)
+Table the validation results (Test set not published yet)
 
 |REDS Dataset|L1&darr;|L2&darr;|RSNR&uarr;|SSIM&uarr;|
 | ------------- |-------------|-------------|-------------|-------------|
