@@ -71,11 +71,11 @@ High resolution (768 X 1024) label [3]
 Results of the training run started at the 04.05.2020. For this training run the recurrent tensor of each temporal block 
 was **not** reset after each full video.
 
-![plots02052020input](results/2020-05-04/plots/input_220_2020-05-06 09_57_22.436760.png)
+![plots04052020input](results/2020-05-04/plots/input_220_2020-05-06 09_57_22.436760.png)
 Low resolution (192 X 256) fovea sampled input image
-![plots02052020pred](results/2020-05-04/plots/prediction_220_2020-05-06 09_57_18.378952.png)
+![plots04052020pred](results/2020-05-04/plots/prediction_220_2020-05-06 09_57_18.378952.png)
 High resolution (768 X 1024) reconstructed prediction of the generator
-![plots02052020label](results/2020-05-04/plots/label_220_2020-05-06 09_57_20.556501.png)
+![plots04052020label](results/2020-05-04/plots/label_220_2020-05-06 09_57_20.556501.png)
 High resolution (768 X 1024) label [3]
 
 The corresponding pre-trained models, additional plots and all metrics can be found in the folder 
