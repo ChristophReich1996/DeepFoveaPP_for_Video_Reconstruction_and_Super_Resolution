@@ -169,6 +169,7 @@ class ModelWrapper(object):
                 # Data to device
                 input = input.to(self.device)
                 label = label.to(self.device)
+                label_low = label_low.to(self.device)
                 # Reset recurrent tensor
                 if bool(new_sequence):
                     if isinstance(self.generator_network, nn.DataParallel):
@@ -179,10 +180,10 @@ class ModelWrapper(object):
                 # Make prediction
                 prediction, prediction_low = self.generator_network(input.detach())
                 # Reshape prediction and label for vgg19
-                prediction_low_reshaped_4d = prediction.reshape(
+                prediction_low_reshaped_4d = prediction_low.reshape(
                     prediction_low.shape[0] * (prediction_low.shape[1] // 3), 3, prediction_low.shape[2],
                     prediction_low.shape[3])
-                label_low_reshaped_4d = label.reshape(label_low.shape[0] * (label_low.shape[1] // 3), 3,
+                label_low_reshaped_4d = label_low.reshape(label_low.shape[0] * (label_low.shape[1] // 3), 3,
                                                       label_low.shape[2], label_low.shape[3])
                 # Call supervised loss
                 loss_supervised = w_supervised_loss * self.loss_function(prediction, label)

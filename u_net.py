@@ -35,7 +35,8 @@ class RecurrentUNet(nn.Module):
             self.decoder_blocks.append(TemporalBlock(in_channels=channel[0], out_channels=channel[1]))
         # Init final low res output convolution
         self.final_low_res_convolution = nn.Conv2d(in_channels=channels_decoding[-1][1],
-                                                   out_channels=channels_super_resolution_blocks[-1][1])
+                                                   out_channels=channels_super_resolution_blocks[-1][1], kernel_size=1,
+                                                   stride=1, padding=0)
         # Init super-resolution blocks
         self.super_resolution_blocks = nn.ModuleList()
         for index, channel in enumerate(channels_super_resolution_blocks):
@@ -84,8 +85,8 @@ class RecurrentUNet(nn.Module):
             output = super_resolution_block(
                 torch.cat((output, F.interpolate(encoder_activations[0], size=output.shape[2:], mode='bilinear',
                                                  align_corners=False)), dim=1))
-        return output + F.interpolate(low_res_output, scale_factor=2 ** len(super_resolution_block),
-                                      mode='bilinear'), low_res_output
+        return output + F.interpolate(low_res_output, scale_factor=2 ** len(self.super_resolution_blocks),
+                                      mode='bilinear', align_corners=False), low_res_output
 
 
 class ResidualBlock(nn.Module):
