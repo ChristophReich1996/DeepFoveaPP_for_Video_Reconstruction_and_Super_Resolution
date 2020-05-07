@@ -33,6 +33,9 @@ class RecurrentUNet(nn.Module):
         self.decoder_blocks = nn.ModuleList()
         for channel in channels_decoding:
             self.decoder_blocks.append(TemporalBlock(in_channels=channel[0], out_channels=channel[1]))
+        # Init final low res output convolution
+        self.final_low_res_convolution = nn.Conv2d(in_channels=channels_decoding[-1][1],
+                                                   out_channels=channels_super_resolution_blocks[-1][1])
         # Init super-resolution blocks
         self.super_resolution_blocks = nn.ModuleList()
         for index, channel in enumerate(channels_super_resolution_blocks):
@@ -50,7 +53,7 @@ class RecurrentUNet(nn.Module):
         for block in self.decoder_blocks:
             block.reset_recurrent_tensor()
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass
         :param input: (torch.Tensor) Input frame
@@ -74,12 +77,14 @@ class RecurrentUNet(nn.Module):
             # Normal case
             else:
                 output = decoder_block(torch.cat((output, encoder_activations[-(index + 1)]), dim=1))
+        # Make low res output
+        low_res_output = self.final_low_res_convolution(output)
         # Forward pass of the super resolution blocks
         for index, super_resolution_block in enumerate(self.super_resolution_blocks):
             output = super_resolution_block(
                 torch.cat((output, F.interpolate(encoder_activations[0], size=output.shape[2:], mode='bilinear',
                                                  align_corners=False)), dim=1))
-        return output
+        return output, low_res_output
 
 
 class ResidualBlock(nn.Module):
