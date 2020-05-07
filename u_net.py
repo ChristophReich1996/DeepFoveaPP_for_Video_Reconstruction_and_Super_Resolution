@@ -84,7 +84,8 @@ class RecurrentUNet(nn.Module):
             output = super_resolution_block(
                 torch.cat((output, F.interpolate(encoder_activations[0], size=output.shape[2:], mode='bilinear',
                                                  align_corners=False)), dim=1))
-        return output, low_res_output
+        return output + F.interpolate(low_res_output, scale_factor=2 ** len(super_resolution_block),
+                                      mode='bilinear'), low_res_output
 
 
 class ResidualBlock(nn.Module):
