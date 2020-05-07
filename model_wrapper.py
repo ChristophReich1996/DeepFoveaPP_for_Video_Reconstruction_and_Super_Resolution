@@ -33,6 +33,7 @@ class ModelWrapper(object):
                  validation_dataloader: DataLoader, test_dataloader: DataLoader,
                  loss_function: nn.Module = lossfunction.AdaptiveRobustLoss(device='cuda:0',
                                                                             num_of_dimension=3 * 6 * 768 * 1024),
+                 loss_function_low_res: nn.Module = nn.L1Loss(reduction='mean'),
                  perceptual_loss: nn.Module = lossfunction.PerceptualLoss(),
                  flow_loss: nn.Module = nn.L1Loss(),
                  generator_loss: nn.Module = lossfunction.NonSaturatingLogisticGeneratorLoss(),
@@ -74,6 +75,7 @@ class ModelWrapper(object):
         self.validation_dataloader = validation_dataloader
         self.test_dataloader = test_dataloader
         self.loss_function = loss_function
+        self.loss_function_low_res = loss_function_low_res
         self.perceptual_loss = perceptual_loss
         self.flow_loss = flow_loss
         self.generator_loss = generator_loss
@@ -115,7 +117,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['discriminator_loss'] = str(discriminator_loss)
 
     def train(self, epochs: int = 1, save_models_after_n_epochs: int = 1, validate_after_n_epochs: int = 1,
-              w_supervised_loss: float = 5.0, w_adversarial: float = 1.0 / 100,
+              w_supervised_loss: float = 5.0, w_supervised_loss_low: float = 2.0, w_adversarial: float = 1.0 / 100,
               w_fft_adversarial: float = 1.0 / 100, w_perceptual: float = 1.0, w_flow: float = 2.0,
               plot_after_n_iterations: int = 144) -> None:
         """
@@ -138,6 +140,7 @@ class ModelWrapper(object):
         self.logger.hyperparameter['w_fft_adversarial'] = str(w_fft_adversarial)
         self.logger.hyperparameter['w_perceptual'] = str(w_perceptual)
         self.logger.hyperparameter['w_flow'] = str(w_flow)
+        self.logger.hyperparameter['w_supervised_loss_low'] = str(w_supervised_loss_low)
         # Model into training mode
         self.generator_network.train()
         self.discriminator_network.train()
@@ -155,7 +158,7 @@ class ModelWrapper(object):
         self.progress_bar = tqdm(total=epochs * len(self.training_dataloader.dataset))
         # Main loop
         for epoch in range(epochs):
-            for input, label, new_sequence in self.training_dataloader:
+            for input, label, label_low, new_sequence in self.training_dataloader:
                 # Update progress bar
                 self.progress_bar.update(n=input.shape[0])
                 # Reset gradients of networks
@@ -167,36 +170,37 @@ class ModelWrapper(object):
                 input = input.to(self.device)
                 label = label.to(self.device)
                 # Reset recurrent tensor
-                '''
                 if bool(new_sequence):
                     if isinstance(self.generator_network, nn.DataParallel):
                         self.generator_network.module.reset_recurrent_tensor()
                     else:
                         self.generator_network.reset_recurrent_tensor()
-                '''
                 ############# Supervised training (+ perceptrual training) #############
                 # Make prediction
-                prediction = self.generator_network(input.detach())
+                prediction, prediction_low = self.generator_network(input.detach())
                 # Reshape prediction and label for vgg19
-                prediction_reshaped_4d = prediction.reshape(prediction.shape[0] * (prediction.shape[1] // 3), 3,
-                                                            prediction.shape[2], prediction.shape[3])
-                label_reshaped_4d = label.reshape(label.shape[0] * (label.shape[1] // 3), 3, label.shape[2],
-                                                  label.shape[3])
+                prediction_low_reshaped_4d = prediction.reshape(
+                    prediction_low.shape[0] * (prediction_low.shape[1] // 3), 3, prediction_low.shape[2],
+                    prediction_low.shape[3])
+                label_low_reshaped_4d = label.reshape(label_low.shape[0] * (label_low.shape[1] // 3), 3,
+                                                      label_low.shape[2], label_low.shape[3])
                 # Call supervised loss
                 loss_supervised = w_supervised_loss * self.loss_function(prediction, label)
-
+                # Calc low res supervised loss
+                loss_supervised_low = w_supervised_loss_low * self.loss_function_low_res(prediction_low, label_low)
+                # Call perceptual loss
                 loss_perceptual = w_perceptual * self.perceptual_loss(
-                    self.vgg_19(F.avg_pool2d(prediction_reshaped_4d, kernel_size=2)),
-                    self.vgg_19(F.avg_pool2d(label_reshaped_4d, kernel_size=2)))
+                    self.vgg_19(prediction_low_reshaped_4d),
+                    self.vgg_19(label_low_reshaped_4d))
                 # Calc gradients
-                (loss_supervised + loss_perceptual).backward()
+                (loss_supervised + loss_supervised_low + loss_perceptual).backward()
                 # Optimize generator
                 self.generator_network_optimizer.step()
                 # Reset gradients of generator network
                 self.generator_network.zero_grad()
                 ############# Adversarial training #############
                 # Make prediction
-                prediction = self.generator_network(input.detach())
+                prediction = self.generator_network(input.detach())[0]
                 # Calc discriminator loss
                 loss_discriminator_real, loss_discriminator_fake = self.discriminator_loss(
                     self.discriminator_network(label),
@@ -218,7 +222,7 @@ class ModelWrapper(object):
                 # Reset gradients of generator network
                 self.generator_network.zero_grad()
                 # Make prediction
-                prediction = self.generator_network(input.detach())
+                prediction = self.generator_network(input.detach())[0]
                 # Reshape prediction and label for vgg19
                 prediction_reshaped_4d = prediction.reshape(prediction.shape[0] * (prediction.shape[1] // 3), 3,
                                                             prediction.shape[2], prediction.shape[3])
@@ -239,7 +243,7 @@ class ModelWrapper(object):
                 self.generator_network.zero_grad()
                 ############# Adversarial training (FFT) #############
                 # Make prediction
-                prediction = self.generator_network(input.detach())
+                prediction = self.generator_network(input.detach())[0]
                 # Calc discriminator loss
                 loss_fft_discriminator_real, loss_fft_discriminator_fake = self.discriminator_loss(
                     self.fft_discriminator_network(label),
@@ -271,6 +275,7 @@ class ModelWrapper(object):
                 self.logger.log(metric_name='training_iteration', value=self.progress_bar.n)
                 self.logger.log(metric_name='epoch', value=epoch)
                 self.logger.log(metric_name='loss_supervised', value=loss_supervised.item())
+                self.logger.log(metric_name='loss_supervised_low', value=loss_supervised_low.item())
                 self.logger.log(metric_name='loss_perceptual', value=loss_perceptual.item())
                 self.logger.log(metric_name='loss_generator', value=loss_generator.item())
                 self.logger.log(metric_name='loss_discriminator',
@@ -350,18 +355,16 @@ class ModelWrapper(object):
         # Main loop
         for index_sequence, batch in enumerate(self.validation_dataloader):
             # Unpack batch
-            input, label, new_sequence = batch
+            input, label, label_low, new_sequence = batch
             # Data to device
             input = input.to(self.device)
             label = label.to(self.device)
             # Reset recurrent tensor
-            '''
             if bool(new_sequence):
                 if isinstance(self.generator_network, nn.DataParallel):
                     self.generator_network.module.reset_recurrent_tensor()
                 else:
                     self.generator_network.reset_recurrent_tensor()
-            '''
             # Make prediction
             prediction = self.generator_network(input)
             # Plot prediction label and input
