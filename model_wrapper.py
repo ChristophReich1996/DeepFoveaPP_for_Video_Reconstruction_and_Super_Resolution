@@ -367,7 +367,7 @@ class ModelWrapper(object):
                 else:
                     self.generator_network.reset_recurrent_tensor()
             # Make prediction
-            prediction = self.generator_network(input)
+            prediction = self.generator_network(input)[0]
             # Plot prediction label and input
             if index_sequence in sequences_to_plot:
                 # Reshape tensors
@@ -454,7 +454,7 @@ class ModelWrapper(object):
             # Sequence to device
             sequence = sequence.to(self.device)
             # Make prediction
-            prediction = self.generator_network(sequence)
+            prediction = self.generator_network(sequence)[0]
             # Reshape tensors
             prediction_batched = prediction.reshape(self.validation_dataloader.dataset.number_of_frames, 3,
                                                     prediction.shape[2], prediction.shape[3])
