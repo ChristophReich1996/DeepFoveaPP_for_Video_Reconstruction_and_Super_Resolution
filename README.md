@@ -4,12 +4,17 @@ This repository tries to solve the task of fovea sampled reconstruction and vide
 architecture of the [Deep Fovea](https://research.fb.com/wp-content/uploads/2019/11/DeepFovea-Neural-Reconstruction-for-Foveated-Rendering-and-Video-Compression-using-Learned-Statistics-of-Natural-Videos.pdf?) 
 paper by Anton S. Kaplanyan et al. ([facebook research](https://research.fb.com/)). [1]
 
+## Info
+
+This brunch is an experimental on, where some additional ideas are tested.
+
 ## Model Architecture
 
 ![Generator model](img/g_model.png)
 ![Losses](img/losses.png)
 [Source](https://github.com/facebookresearch/DeepFovea) [1]
 
+<!---
 To reach the desired super-resolution (4 times higher than the input) two additional blocks are used, in the end of the 
 generator network. This so called super-resolution blocks are based on two (for the final block three) 
 [deformable convolutions](https://arxiv.org/abs/1811.11168) and an bilinear upsampling. [1]
@@ -155,3 +160,4 @@ The corresponding pre-trained models, additional plots and metrics can be found 
     year={2018}
 }
 ```
+-->
