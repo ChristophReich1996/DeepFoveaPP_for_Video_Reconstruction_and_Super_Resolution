@@ -158,7 +158,7 @@ class REDSFovea(REDS):
         return mask.float()
 
     @torch.no_grad()
-    def __getitem__(self, item: int) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool]:
         """
         Get item method returns the fovea masked downsampled frame sequence, the high resolution sequence, and a bool
         if the new sequence is the start of a new video
@@ -176,6 +176,7 @@ class REDSFovea(REDS):
         self.previously_loaded_frames = self.data_path[item]
         # Load frames
         frames_masked = []
+        frames_label_low = []
         frames_label = []
         for frame in self.data_path[item]:
             # Load images as PIL image, and convert to tensor
@@ -189,17 +190,23 @@ class REDSFovea(REDS):
             # Crop normal image
             image = image[:, :, 128:-128]
             image = pad(image[None], pad=[0, 0, 24, 24], mode="constant", value=0)[0]
+            # Add to list
+            frames_label.append(image)
             # Crop low res masked image
             image_low_res_masked = image_low_res_masked[:, :, 32:-32]
             image_low_res_masked = pad(image_low_res_masked[None], pad=[0, 0, 6, 6], mode="constant", value=0)[0]
             # Add to list
             frames_masked.append(image_low_res_masked)
+            # Crop low res image
+            image_low_res = image_low_res[:, :, 32:-32]
+            image_low_res = pad(image_low_res[None], pad=[0, 0, 6, 6], mode="constant", value=0)[0]
             # Add to list
-            frames_label.append(image)
+            frames_label_low.append(image_low_res)
         # Concatenate frames to tensor of shape (3 * number of frames, height (/ 4), width (/ 4))
         frames_masked = torch.cat(frames_masked, dim=0)
         frames_label = torch.cat(frames_label, dim=0)
-        return frames_masked, frames_label, new_video
+        frames_label_low = torch.cat(frames_label_low, dim=0)
+        return frames_masked, frames_label, frames_label_low, new_video
 
 
 class REDSParallel(Dataset):
@@ -270,7 +277,7 @@ class REDSFoveaParallel(Dataset):
         """
         return len(self.datasets[0])
 
-    def __getitem__(self, item) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+    def __getitem__(self, item) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool]:
         """
         Get item method returns the fovea masked downsampled frame sequence, the high resolution sequence, and a bool
         if the new sequence is the start of a new video
@@ -284,16 +291,18 @@ class REDSFoveaParallel(Dataset):
         return self.datasets[gpu_index][item]
 
 
-def reds_parallel_collate_fn(batch: Tuple[torch.Tensor, torch.Tensor, bool]) -> Tuple[torch.Tensor, torch.Tensor, bool]:
+def reds_parallel_collate_fn(batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool]) -> Tuple[
+    torch.Tensor, torch.Tensor, torch.Tensor, bool]:
     """
     Collate function for parallel dataset to manage new_video flag
-    :param batch: (Tuple[torch.Tensor, torch.Tensor, bool]) Batch
-    :return: (Tuple[torch.Tensor, torch.Tensor, bool]) Stacked input & label and new_video flag
+    :param batch: (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool]) Batch
+    :return: (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool]) Stacked input, label, low res label and new_video
     """
     input = torch.stack([batch[index][0] for index in range(len(batch))], dim=0)
     label = torch.stack([batch[index][1] for index in range(len(batch))], dim=0)
-    new_video = sum([batch[index][2] for index in range(len(batch))]) != 0
-    return input, label, new_video
+    label_low = torch.stack([batch[index][2] for index in range(len(batch))], dim=0)
+    new_video = sum([batch[index][3] for index in range(len(batch))]) != 0
+    return input, label, label_low, new_video
 
 
 class PseudoDataset(Dataset):
