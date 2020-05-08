@@ -56,7 +56,7 @@ python resample/setup.py install
 ## Results
 
 We sampled approximately **19.7%** of the low resolution (192 X 256) input image, when apply the fovea sampling. This 19.7% 
-corresponds to **1.2%** when compared to the high resolution (768 X 1024) label.
+corresponds to **1.2%** when compared to the high resolution (768 X 1024) label. Each sequence consists of 6 consecutive frames.
 
 Results of the training run started at the 02.05.2020. For this training run the recurrent tensor of each temporal block 
 was reset after each full video.
