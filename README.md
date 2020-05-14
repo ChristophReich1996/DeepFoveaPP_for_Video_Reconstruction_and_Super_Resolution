@@ -85,7 +85,7 @@ Table the validation results after approximately 48h of training (Test set not p
 |DeepFovea++ (reset rec. tensor)|0.0701|0.0117|22.6681|0.9116|
 |DeepFovea++ (not reset rec. tensor)|0.0610|0.0090|23.8755|0.9290|
 
-The visual impression, however, yells to a different result. The results form the training run where the recurrent 
+The visual impression, however, leads to a different result. The results form the training run where the recurrent 
 tensor is reset after each full video seen more realistic.
 
 The corresponding pre-trained models, additional plots and metrics can be found in the folder 
