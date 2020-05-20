@@ -12,7 +12,7 @@ paper by Anton S. Kaplanyan et al. ([facebook research](https://research.fb.com/
 
 To reach the desired super-resolution (4 times higher than the input) two additional blocks are used, in the end of the 
 generator network. This so called super-resolution blocks are based on two (for the final block three) 
-[deformable convolutions](https://arxiv.org/abs/1811.11168) and an bilinear upsampling. [1]
+[deformable convolutions](https://arxiv.org/abs/1811.11168) and a bilinear upsampling operation. [1]
 
 ## Losses
 
@@ -90,6 +90,8 @@ tensor is reset after each full video seen more realistic.
 
 The corresponding pre-trained models, additional plots and metrics can be found in the folder 
 [results](results).
+
+We also experimented with loss functions at multiple resolution stages. This, however, has led to a big performance drop. The corresponding code can be found in the [experimental branch](https://github.com/ChristophReich1996/DeepFoveaPP_for_Video_Reconstruction_and_Super_Resolution/tree/Experimental).
 
 ## References
 
