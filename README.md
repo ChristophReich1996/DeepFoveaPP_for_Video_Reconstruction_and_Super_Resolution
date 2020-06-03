@@ -68,22 +68,28 @@ corresponds to **1.2%** when compared to the high resolution (768 X 1024) label.
 Results of the training run started at the 02.05.2020. For this training run the recurrent tensor of each temporal block 
 was reset after each full video.
 
-![plots02052020input](results/2020-05-02/plots/input_220_2020-05-04%2011_17_59.593499.png)
+
 Low resolution (192 X 256) fovea sampled input image
-![plots02052020pred](results/2020-05-02/plots/prediction_220_2020-05-04%2011_17_55.343509.png)
+![plots02052020input](results/2020-05-02/plots/input_220_2020-05-04%2011_17_59.593499.png)
+
 High resolution (768 X 1024) reconstructed prediction of the generator
-![plots02052020label](results/2020-05-02/plots/label_220_2020-05-04%2011_17_57.695080.png)
+![plots02052020pred](results/2020-05-02/plots/prediction_220_2020-05-04%2011_17_55.343509.png)
+
 High resolution (768 X 1024) label [3]
+![plots02052020label](results/2020-05-02/plots/label_220_2020-05-04%2011_17_57.695080.png)
 
 Results of the training run started at the 04.05.2020. For this training run the recurrent tensor of each temporal block 
 was **not** reset after each full video.
 
-![plots04052020input](results/2020-05-04/plots/input_220_2020-05-06%2009_57_22.436760.png)
+
 Low resolution (192 X 256) fovea sampled input image
-![plots04052020pred](results/2020-05-04/plots/prediction_220_2020-05-06%2009_57_18.378952.png)
+![plots04052020input](results/2020-05-04/plots/input_220_2020-05-06%2009_57_22.436760.png)
+
 High resolution (768 X 1024) reconstructed prediction of the generator
-![plots04052020label](results/2020-05-04/plots/label_220_2020-05-06%2009_57_20.556501.png)
+![plots04052020pred](results/2020-05-04/plots/prediction_220_2020-05-06%2009_57_18.378952.png)
+
 High resolution (768 X 1024) label [3]
+![plots04052020label](results/2020-05-04/plots/label_220_2020-05-06%2009_57_20.556501.png)
 
 Table the validation results after approximately 48h of training (Test set not published yet)
 
