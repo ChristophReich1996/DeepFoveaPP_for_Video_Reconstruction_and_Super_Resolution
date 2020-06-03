@@ -4,4 +4,3 @@ tqdm>=4.31.1
 numpy
 pillow>=4.3.0
 git+https://github.com/jonbarron/robust_loss_pytorch
-git+https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch/tree/pytorch_1.0.0
