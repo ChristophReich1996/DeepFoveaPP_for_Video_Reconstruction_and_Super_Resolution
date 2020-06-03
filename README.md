@@ -54,6 +54,10 @@ cd Deep_Fovea_Architecture_for_Video_Super_Resolution
 pip install -r requirements.txt
 python correlation/setup.py install
 python resample/setup.py install
+git clone https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch
+cd Deformable-Convolution-V2-PyTorch
+git checkout pytorch_1.0.0
+python setup.py build install
 ```
 
 ## Results
