@@ -364,6 +364,24 @@ class ModelWrapper(object):
             '''
             # Make prediction
             prediction = self.generator_network(input)
+            # Calc validation metrics
+            for validation_metric in validation_metrics:
+                # Calc metric
+                metric = validation_metric(prediction, label).item()
+                # Case if validation metric is a nn.Module
+                if isinstance(validation_metric, nn.Module):
+                    # Save metric and name of metric
+                    if validation_metric.__class__.__name__ in metrics.keys():
+                        metrics[validation_metric.__class__.__name__].append(metric)
+                    else:
+                        metrics[validation_metric.__class__.__name__] = [metric]
+                # Case if validation metric is a callable function
+                else:
+                    # Save metric and name of metric
+                    if validation_metric.__name__ in metrics.keys():
+                        metrics[validation_metric.__name__].append(metric)
+                    else:
+                        metrics[validation_metric.__name__] = [metric]
             # Plot prediction label and input
             if index_sequence in sequences_to_plot:
                 # Reshape tensors
@@ -393,24 +411,6 @@ class ModelWrapper(object):
                     filename=os.path.join(self.path_save_plots,
                                           'input_{}_{}.png'.format(index_sequence, str(datetime.now()))),
                     nrow=self.validation_dataloader.dataset.number_of_frames)
-            # Calc validation metrics
-            for validation_metric in validation_metrics:
-                # Calc metric
-                metric = validation_metric(prediction, label).item()
-                # Case if validation metric is a nn.Module
-                if isinstance(validation_metric, nn.Module):
-                    # Save metric and name of metric
-                    if validation_metric.__class__.__name__ in metrics.keys():
-                        metrics[validation_metric.__class__.__name__].append(metric)
-                    else:
-                        metrics[validation_metric.__class__.__name__] = [metric]
-                # Case if validation metric is a callable function
-                else:
-                    # Save metric and name of metric
-                    if validation_metric.__name__ in metrics.keys():
-                        metrics[validation_metric.__name__].append(metric)
-                    else:
-                        metrics[validation_metric.__name__] = [metric]
         # Average metrics and save them in logs
         for metric_name in metrics:
             self.logger.log(metric_name=metric_name, value=float(np.mean(metrics[metric_name])))
