@@ -334,12 +334,14 @@ class ModelWrapper(object):
     def validate(self,
                  validation_metrics: Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]
                  = (nn.L1Loss(reduction='mean'), nn.MSELoss(reduction='mean'), misc.psnr, misc.ssim),
-                 sequences_to_plot: Tuple[int, ...] = (1, 2, 3, 4, 76, 83, 124, 150, 220, 432)) -> None:
+                 sequences_to_plot: Tuple[int, ...] = (1, 2, 3, 4, 76, 83, 124, 150, 220, 432),
+                 reset_recurrent_tensor_after_each_sequnece: bool = False) -> None:
         """
         Validation method which produces validation metrics and plots
         :param validation_metrics: (Tuple[Union[nn.Module, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]]) Tuple
         of callable validation metric to be computed
         :param sequences_to_plot: (Tuple[int, ...]) Tuple of validation dataset indexes to be plotted
+        :param reset_recurrent_tensor_after_each_sequnece: (bool) Resets recurrent tensor in case of a sequence if true
         """
         # Generator model to device
         self.generator_network.to(self.device)
@@ -355,13 +357,11 @@ class ModelWrapper(object):
             input = input.to(self.device)
             label = label.to(self.device)
             # Reset recurrent tensor
-            '''
-            if bool(new_sequence):
+            if bool(new_sequence) and reset_recurrent_tensor_after_each_sequnece:
                 if isinstance(self.generator_network, nn.DataParallel):
                     self.generator_network.module.reset_recurrent_tensor()
                 else:
                     self.generator_network.reset_recurrent_tensor()
-            '''
             # Make prediction
             prediction = self.generator_network(input)
             # Calc validation metrics
@@ -426,7 +426,8 @@ class ModelWrapper(object):
         """
         Inference method generates the reconstructed image to the corresponding input and saves the input, label and
         output as an image
-        :param sequences: (List[torch.Tensor]) List of video sequences
+        :param sequences: (List[torch.Tensor]) List of video sequences with shape
+        [1 (batch size), 3 * 6 (rgb * frames), 192, 256]
         :param apply_fovea_filter: (bool) If true the fovea filter is applied to the input sequence
         """
         # Generator into eval mode
@@ -465,4 +466,4 @@ class ModelWrapper(object):
         # Generator back into train mode
         self.generator_network.train()
         # Reset recurrent tensor in generator
-        # self.generator_network.reset_recurrent_tensor()
+        self.generator_network.reset_recurrent_tensor()
