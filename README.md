@@ -65,6 +65,22 @@ git checkout pytorch_1.0.0
 python setup.py build install
 ```
 
+## Usage
+
+To perform training, validation, testing or inference just run the `main.py` file with the corresponding arguments show
+below.
+
+Argument | Default value | Info
+--- | --- | ---
+`--train` | False | Binary flag. If set training will be performed.
+`--val` | False | Binary flag. If set validation will be performed.
+`--test` | False | Binary flag. If set testing will be performed.
+`--inference` | False | Binary flag. If set inference will be performed.
+`--inference_data` | False | Path to inference data to be loaded.
+`--cuda_devices` | False | String of cuda device indexes to be used. Indexes must be separated by a comma.
+`--data_parallel` | False | Binary flag. If multi GPU training should be utilized set flag.
+`--load_model` | False | Path to model to be loaded.
+
 ## Results
 
 We sampled approximately **19.7%** of the low resolution (192 X 256) input image, when apply the fovea sampling. This 19.7% 
