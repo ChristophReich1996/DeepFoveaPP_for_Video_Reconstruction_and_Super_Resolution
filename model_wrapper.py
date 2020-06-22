@@ -463,7 +463,3 @@ class ModelWrapper(object):
                 filename=os.path.join(self.path_save_plots,
                                       'prediction_inf_{}_{}.png'.format(index, str(datetime.now()))),
                 nrow=self.validation_dataloader.dataset.number_of_frames)
-        # Generator back into train mode
-        self.generator_network.train()
-        # Reset recurrent tensor in generator
-        self.generator_network.reset_recurrent_tensor()
