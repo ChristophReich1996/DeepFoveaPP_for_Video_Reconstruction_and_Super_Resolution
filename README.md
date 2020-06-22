@@ -76,10 +76,10 @@ Argument | Default value | Info
 `--val` | False | Binary flag. If set validation will be performed.
 `--test` | False | Binary flag. If set testing will be performed.
 `--inference` | False | Binary flag. If set inference will be performed.
-`--inference_data` | False | Path to inference data to be loaded.
-`--cuda_devices` | False | String of cuda device indexes to be used. Indexes must be separated by a comma.
+`--inference_data` | "" | Path to inference data to be loaded.
+`--cuda_devices` | "0" | String of cuda device indexes to be used. Indexes must be separated by a comma.
 `--data_parallel` | False | Binary flag. If multi GPU training should be utilized set flag.
-`--load_model` | False | Path to model to be loaded.
+`--load_model` | "" | Path to model to be loaded.
 
 ## Results
 
