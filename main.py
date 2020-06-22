@@ -10,7 +10,7 @@ parser.add_argument("--val", default=False, action="store_true",
 parser.add_argument("--test", default=False, action="store_true",
                     help="Binary flag. If set testing will be performed.")
 parser.add_argument("--inference", default=False, action="store_true",
-                    help="Binary flag. If set testing will be performed.")
+                    help="Binary flag. If set inference will be performed.")
 parser.add_argument("--inference_data", default="", type=str,
                     help="Path to inference data to be loaded.")
 parser.add_argument("--cuda_devices", default="0", type=str,
