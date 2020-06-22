@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 
 import os
 import json
@@ -122,3 +122,12 @@ def get_fovea_mask(shape: Tuple[int, int], p_mask: torch.Tensor = None, return_p
     if return_p_mask:
         return mask.float(), p_mask.float()
     return mask.float()
+
+
+def load_inference_data(path: str) -> List[torch.Tensor]:
+    """
+    Function loads inference data
+    :param path: (str) Path to inference data folder
+    :return: (List[torch.Tensor]) List of sequences with the shape of [1 (batch size), 3 * 6 (rgb * frames), 192, 256]
+    """
+    pass
