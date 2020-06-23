@@ -1,0 +1,211 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\usepackage{comment}
+
+\usepackage[utf8]{inputenc}
+\usepackage{caption}
+\usepackage{tabularx}
+\captionsetup[table]{skip=20pt}
+\usepackage{cvpr}
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{physics}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{subcaption}
+\usepackage{bm,color}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shapes, arrows}
+\usepackage{graphics}
+\usepackage{pifont}
+\pgfplotsset{compat=newest}
+\usepackage{blindtext}
+
+\usepackage[pagebackref=true,breaklinks=true,letterpaper=true,colorlinks,bookmarks=false]{hyperref}
+
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+% Init and set plot shapes
+\newlength\figH
+\newlength\figW
+\setlength{\figH}{4cm}
+\setlength{\figW}{8cm}
+
+% Input tud colors
+\input{TUDColors.tex}
+
+% Math styles
+\newcommand{\Vector}[1]{\boldsymbol{#1}}
+\newcommand{\Matrix}[1]{\boldsymbol{\MakeUppercase{#1}}}
+\newcommand{\Tensor}[1]{\boldsymbol{\mathrm{\MakeUppercase{#1}}}}
+\newcommand{\Set}[1]{\mathbb{#1}}
+\newcommand{\Mean}[1]{\mathbb{E}\left[#1\right]}
+\newcommand{\Var}[1]{\mathrm{Var}\left[#1\right]}
+\newcommand{\Cov}[1]{\mathrm{Cov}\left[#1\right]}
+\newcommand{\Gaussian}[1]{\mathcal{N}\left(#1\right)}
+
+\cvprfinalcopy
+
+\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
+
+\setcounter{page}{1}
+\begin{document}
+
+\title{DeepFovea++: Reconstruction and Super-Resolution for Natural Foveated Rendered Videos}
+
+\author{
+    Christoph Reich\\
+    TU Darmstadt\\
+    {\tt\small christoph.reich@stud.tu-darmstadt.de}
+    
+    \and
+    Marius Memmel\\
+    TU Darmstadt\\
+    {\tt\small marius.memmel@stud.tu-darmstadt.de}
+    
+    \and
+    Jonas Henry Grebe\\
+    TU Darmstadt\\
+    {\tt\small jonas.grebe@stud.tu-darmstadt.de}
+}
+
+
+\twocolumn[{%
+\renewcommand\twocolumn[1][]{#1}%
+\maketitle
+\begin{center}
+    \centering
+    \includegraphics[width=\textwidth]{figures/input.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\textwidth]{figures/prediction.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\textwidth]{figures/label.png}\\
+    \captionof{figure}{Results of our proposed DeepFovea++ technique. The fovea sampled input sequences of low resolution (192 X 256) image frames can be seen on the top. The reconstructed super-resolution (768 X 1024) prediction sequence is shown in the middle, and the corresponding label at the bottom.}
+    \label{fig:firstresults}
+\end{center}%
+}]
+
+\begin{abstract}
+Image super-resolution is a well-known problem in the computer vision community. Recent papers extended the problem of super-resolution to videos and showed amazing results. On the other hand deep learning based fovea sampled image reconstruction has drawn some popularity since the DeepFovea publication of Facebook AI. DeepFovea showed outstanding results, however, the proposed reconstruction network was only able to reconstruct relatively low-resolution images of $128\times128$ pixels. We revisit the proposed DeepFovea architecture to perform fovea sampled video reconstruction and super-resolution ($192 \times 256$ $\to$ $768 \times 1024$) at once. Our proposed architecture, DeepFovea++, first reconstructs a given video sequence by a recurrent U-Net architecture, and afterward, the desired super-resolution is learned by deformable convolutions. We tested our DeepFovea++ architecture on the challenging REDS dataset. The code is available at \url{https://github.com/ChristophReich1996/DeepFoveaPP_for_Video_Reconstruction_and_Super_Resolution}.
+\end{abstract}
+
+\section{Introduction} % Jonas
+
+\section{Previous Work} % Marius
+
+\section{DeepFovea++ Architecture} % Christoph
+The DeepFovea++ reconstruction model is mainly based on two parts. First, a recurrent residual U-Net \cite{unet, deepfovea}, and second, two super-resolution blocks based on deformable convolutions. We train both, the U-Net, and the super-resolution blocks, in an end-to-end setting. The whole reconstruction architecture consists of about 2.3 Mio parameters. We used a relatively small reconstruction model to be able to fit the whole DeepForvea++ framework, consisting of the reconstruction model, a 3d discriminator, and a 3D FFT-discriminator, into GPU memory.
+
+\subsection{Reconstruction model}
+
+\subsection{Discriminator}
+
+\subsection{FFT-Discriminator}
+
+\subsection{Lossfunction}
+
+\subsubsection{Supervised loss}
+
+\subsubsection{Adversarial loss}
+
+\subsubsection{Flow loss}
+
+\section{Experiments} % Christoph
+
+\subsection{REDS Dataset} % Jonas
+
+\subsection{Implementation Details} % Christoph
+We implemented the whole DeepFovea++ framework in PyTorch 1.4.0 \cite{pytorch}. Our implementation is based on multiple existing implementations. First, we build our framework on top of the deformable convolution v2 \cite{deformableconv} implementation included in the mmdetection toolbox \cite{mmdetection}. Second, we used the correlation package \cite{flownet2} of Nvidia for implementing the optical flow loss. Furthermore, to estimate the optical flow for the corresponding optical flow loss, we utilized a pre-trained PWC-Net \cite{pwcnet} by Nvidia research. Finally, our main supervised loss function is based on the adaptive robust loss function implementation by Jonathan T. Barron \cite{adaptiveroubustloss}.\\
+For optimizing all networks we utilized the Adam optimizer \cite{adam}. For the reconstruction model, we set the learning rate to $3\times 10^{-4}$. The first and second-order running average factors were set 0.1 and 0.95, respectively. In both the 3d discriminator and the 3d FFT-discriminator we set the learning rate to $10^{-4}$. The first and second-order running average factors were set to the same value as for the reconstruction model.\\
+
+TODO: Fovea mask!\\
+
+TODO: Preprcessing\\
+
+We were able to fit one sequence consisting of six rgb frames on one Tesla V100 (16GB). We trained our whole framework for 15 epochs on two GPUs. This results in a batch size of two. This training process took us about two days.
+
+\subsection{Results} % Christoph
+For analyzing our framework results we calculated multiple metrics. First, we compute the common $\operatorname{L1}$ metric and the Mean-Squared-Error (MSE, $\operatorname{L2}$). In case for a reconstructed image $\Tensor{I}_{\text{pred}}\in\Set{R}^{c, h, w}$ and the corresponding label $\Tensor{I}_{\text{label}}\in\Set{R}^{c, h, w}$, the $\operatorname{L1}$ and $\operatorname{L2}$ loss is defined as
+
+\begin{align}
+    \operatorname{L1} &= \frac{1}{n\times c\times w}\norm{\Tensor{I}_{\text{pred}} - \Tensor{I}_{\text{label}}}_{1}\\
+    \operatorname{L2} &= \frac{1}{n\times c\times w}\norm{\Tensor{I}_{\text{pred}} - \Tensor{I}_{\text{label}}}_{2}.
+\end{align}
+
+Additionally we compute the Peak-Signal-ToNoise ($\operatorname{PSNR}$) and the, and Structural-Similarity-Image-Metric ($\operatorname{SSIM}$) \cite{ssmi} to evaluate quality of prediction, which are defined as
+
+\begin{align}
+    \operatorname{PSNR}&=10 \log_{10},\left(\frac{\max\{\Tensor{I}_{\text{pred}}\}^2}{\operatorname{L2}\left(\Tensor{I}_{\text{pred}}, \Tensor{I}_{\text{label}}\right)} \right)\\
+    \operatorname{SSIM}&=\frac{4\Mean{\Tensor{I}_{\text{pred}}}\Mean{\Tensor{I}_{\text{label}}}\Cov{\Tensor{I}_{\text{pred}}, \Tensor{I}_{\text{label}}}}{\left(\Mean{\Tensor{I}_{\text{pred}}}^2 + \Mean{\Tensor{I}_{\text{label}}}^2\right)\left(\Var{\Tensor{I}_{\text{pred}}} + \Var{\Tensor{I}_{\text{label}}}\right)}.
+\end{align}
+
+We tested our DeepFovea++ framework with two settings. In the first setting, we reset the recurrent state of the reconstruction model after each video sequence. In the second setting, we preserve the recurrent state over the whole training and validation process. Our tests lead to the following results.\\
+
+TODO: Insert results\\
+
+\section{Conclusion} % All
+
+{\small
+    \bibliographystyle{ieee}
+    \bibliography{egbib}
+}
+
+\section{Appendix}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/no_rest/input_83_2020-05-06 09_56_21.383738.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/no_rest/prediction_83_2020-05-06 09_56_17.234900.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/no_rest/label_83_2020-05-06 09_56_19.447333.png}\\
+    \caption{Results of the first DeepFovea++ setting. The fovea sampled input sequences (192 X 256) on the top. The reconstructed super-resolution (768 X 1024) prediction sequence in the middle, and the corresponding label at the bottom.}
+    \label{fig:norestresults1}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/rest/input_83_2020-05-04 11_16_57.840082.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/rest/prediction_83_2020-05-04 11_16_53.597074.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/rest/label_83_2020-05-04 11_16_55.895397.png}\\
+    \caption{Results of the second DeepFovea++ setting. The fovea sampled input sequences (192 X 256) on the top. The reconstructed super-resolution (768 X 1024) prediction sequence in the middle, and the corresponding label at the bottom.}
+    \label{fig:restresults1}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/no_rest/input_432_2020-05-06 09_58_44.696719.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/no_rest/prediction_432_2020-05-06 09_58_40.811600.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/no_rest/label_432_2020-05-06 09_58_43.122398.png}\\
+    \caption{Results of the first DeepFovea++ setting. The fovea sampled input sequences (192 X 256) on the top. The reconstructed super-resolution (768 X 1024) prediction sequence in the middle, and the corresponding label at the bottom.}
+    \label{fig:norestresults2}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/rest/input_432_2020-05-04 11_19_22.304534.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/rest/prediction_432_2020-05-04 11_19_18.114088.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/rest/label_432_2020-05-04 11_19_20.713044.png}\\
+    \caption{Results of the second DeepFovea++ setting. The fovea sampled input sequences (192 X 256) on the top. The reconstructed super-resolution (768 X 1024) prediction sequence in the middle, and the corresponding label at the bottom.}
+    \label{fig:restresults2}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/no_rest/input_150_2020-05-06 09_56_53.103463.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/no_rest/prediction_150_2020-05-06 09_56_48.941222.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/no_rest/label_150_2020-05-06 09_56_51.153540.png}\\
+    \caption{Results of the first DeepFovea++ setting. The fovea sampled input sequences (192 X 256) on the top. The reconstructed super-resolution (768 X 1024) prediction sequence in the middle, and the corresponding label at the bottom.}
+    \label{fig:norestresults3}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/rest/input_150_2020-05-04 11_17_29.891315.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/rest/prediction_150_2020-05-04 11_17_25.749898.png}\\\vspace{-0.1cm}
+    \includegraphics[width=\columnwidth]{figures/rest/label_150_2020-05-04 11_17_27.920524.png}\\
+    \caption{Results of the second DeepFovea++ setting. The fovea sampled input sequences (192 X 256) on the top. The reconstructed super-resolution (768 X 1024) prediction sequence in the middle, and the corresponding label at the bottom.}
+    \label{fig:restresults3}
+\end{figure}
+
+\end{document}
