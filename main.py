@@ -41,10 +41,9 @@ import misc
 
 if __name__ == '__main__':
     # Init networks
-    if args.load_model == "":
-        generator_network = nn.DataParallel(RecurrentUNet().cuda())
-    else:
-        generator_network = torch.load(args.load_model)
+    generator_network = nn.DataParallel(RecurrentUNet().cuda())
+    if args.load_model != "":
+        generator_network.load_state_dict(torch.load(args.load_model))
     # Init additional models
     discriminator_network = nn.DataParallel(Discriminator().cuda())
     fft_discriminator_network = nn.DataParallel(FFTDiscriminator().cuda())
