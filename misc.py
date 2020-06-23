@@ -61,7 +61,6 @@ def psnr(prediction: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
 def ssim(prediction: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
     """
     Function computes the structural similarity
-    SSMI = 10 * log10(max[y]**2 / MSE(y, y'))
     Source: https://github.com/ChristophReich1996/CellFlowNet
     :param prediction: (torch.Tensor) Prediction
     :param label: (torch.Tensor) Label
