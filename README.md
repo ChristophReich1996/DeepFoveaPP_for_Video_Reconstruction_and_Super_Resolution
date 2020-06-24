@@ -15,7 +15,9 @@ This Neural Network Performs Foveated Rendering [Paper Summary](https://www.yout
 ## Model Architecture
 
 ![reconstructionmodel](images/fft_discriminator.png)
-
+![discriminator](images/discriminator.png)
+![fftdiscriminator](images/fft_discriminator.png)
+[1]
 
 To reach the desired super-resolution (4 times higher than the input) two additional blocks are used, in the end of the 
 generator network. This so called super-resolution blocks are based on two (for the final block three) 
