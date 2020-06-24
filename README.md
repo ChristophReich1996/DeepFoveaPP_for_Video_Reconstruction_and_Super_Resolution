@@ -12,10 +12,12 @@ paper by Anton S. Kaplanyan et al. ([facebook research](https://research.fb.com/
 ## Expected Results
 Showcase [Facebook's AI Reconstruction May Help Solve Foveated Rendering](https://www.youtube.com/watch?v=99qE4iN7_js)
 This Neural Network Performs Foveated Rendering [Paper Summary](https://www.youtube.com/watch?v=eTUmmW4ispA)
+
 ## Model Architecture
-
 ![reconstructionmodel](images/fft_discriminator.png)
-
+![discriminator](images/discriminator.png)
+![fftdiscriminator](images/fft_discriminator.png)
+[1]
 
 To reach the desired super-resolution (4 times higher than the input) two additional blocks are used, in the end of the 
 generator network. This so called super-resolution blocks are based on two (for the final block three) 
