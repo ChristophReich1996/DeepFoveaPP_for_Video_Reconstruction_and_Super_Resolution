@@ -12,8 +12,8 @@ paper by Anton S. Kaplanyan et al. ([facebook research](https://research.fb.com/
 ## Expected Results
 Showcase [Facebook's AI Reconstruction May Help Solve Foveated Rendering](https://www.youtube.com/watch?v=99qE4iN7_js)
 This Neural Network Performs Foveated Rendering [Paper Summary](https://www.youtube.com/watch?v=eTUmmW4ispA)
-## Model Architecture
 
+## Model Architecture
 ![reconstructionmodel](images/fft_discriminator.png)
 ![discriminator](images/discriminator.png)
 ![fftdiscriminator](images/fft_discriminator.png)
