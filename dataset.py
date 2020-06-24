@@ -149,7 +149,7 @@ class REDSFovea(REDS):
             # Calc euclidean distances
             distances = np.linalg.norm(indexes - center.reshape((2, 1)), ord=2, axis=0)
             # Calc probability mask
-            m, b = np.linalg.pinv(np.array([[20, 1], [45, 1]])) @ np.array([[0.98], [0.15]])
+            m, b = np.linalg.pinv(np.array([[20, 1], [40, 1]])) @ np.array([[0.98], [0.15]])
             self.p_mask = np.where(distances < 20, 0.98, 0.0) + np.where(distances > 40, 0.15, 0.0) \
                           + np.where(np.logical_and(distances >= 20, distances <= 40), m * distances + b, 0.0)
         # Make mask
