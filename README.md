@@ -14,8 +14,9 @@ Showcase [Facebook's AI Reconstruction May Help Solve Foveated Rendering](https:
 This Neural Network Performs Foveated Rendering [Paper Summary](https://www.youtube.com/watch?v=eTUmmW4ispA)
 ## Model Architecture
 
-![reconstruction model](images/reconstruction_model.png)
-![discriminator](images/discriminator.png)![fft discriminator](images/fft_discriminator.png)
+![reconstructionmodel](images/reconstruction_model.png)
+![discriminator](images/discriminator.png)
+![fftdiscriminator](images/fft_discriminator.png)
 [1]
 
 To reach the desired super-resolution (4 times higher than the input) two additional blocks are used, in the end of the 
