@@ -4,9 +4,7 @@ This repository tries to solve the task of fovea sampled reconstruction and vide
 architecture of the [Deep Fovea](https://research.fb.com/wp-content/uploads/2019/11/DeepFovea-Neural-Reconstruction-for-Foveated-Rendering-and-Video-Compression-using-Learned-Statistics-of-Natural-Videos.pdf?) 
 paper by Anton S. Kaplanyan et al. ([facebook research](https://research.fb.com/)). [1]
 
-## Expected Results
-Showcase [Facebook's AI Reconstruction May Help Solve Foveated Rendering](https://www.youtube.com/watch?v=99qE4iN7_js)
-This Neural Network Performs Foveated Rendering [Paper Summary](https://www.youtube.com/watch?v=eTUmmW4ispA)
+*Our final paper can be found [here](DeepFovea++%20paper/DeepFovea++.pdf).*
 
 ## Model Architecture
 ![reconstructionmodel](images/reconstruction_model.png)
