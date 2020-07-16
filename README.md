@@ -1,4 +1,4 @@
-# DeepFovea++ for Video Reconstruction and Super Resolution
+# DeepFovea++: Reconstruction and Super-Resolution for Natural Foveated Rendered Videos
 
 This repository tries to solve the task of fovea sampled reconstruction and video super resolution with partly based on the
 architecture of the [Deep Fovea](https://research.fb.com/wp-content/uploads/2019/11/DeepFovea-Neural-Reconstruction-for-Foveated-Rendering-and-Video-Compression-using-Learned-Statistics-of-Natural-Videos.pdf?) 
