@@ -1,0 +1,308 @@
+\documentclass[
+	ngerman,
+	aspectratio=169,
+	color={accentcolor=3d},
+	logo=false,
+	colorframetitle=true,
+%	logofile=example-image,
+	]{tudabeamer}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[main=english]{babel}
+\usepackage{graphicx}
+\usepackage{physics}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, shadings, shadows, shapes, arrows}
+\usepackage[numbers]{natbib}
+\usepackage{pifont}
+\usepackage{comment}
+
+\hypersetup{pagebackref=true,breaklinks=true,colorlinks,bookmarks=false,citecolor=magenta,linkcolor=magenta}
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\input{TUDColors}
+
+% \setbeamercovered{dynamic}
+\setbeamercovered{invisible}
+
+\newcommand{\Vector}[1]{\boldsymbol{#1}}
+\newcommand{\Matrix}[1]{\boldsymbol{\MakeUppercase{#1}}}
+\newcommand{\Tensor}[1]{\boldsymbol{\mathrm{\MakeUppercase{#1}}}}
+\newcommand{\Set}[1]{\mathbb{#1}}
+\newcommand{\Mean}[1]{\mathbb{E}\left[#1\right]}
+\newcommand{\Var}[1]{\mathrm{Var}\left[#1\right]}
+\newcommand{\Cov}[1]{\mathrm{Cov}\left[#1\right]}
+\newcommand{\Gaussian}[1]{\mathcal{N}\left(#1\right)}
+
+\title{DeepFovea++: Reconstruction and Super-Resolution for Natural Foveated Rendered Videos}
+\subtitle{Christoph Reich$\;\;$Marius Memmel$\;\;$Jonas Henry Grebe}
+\author[C. Reich, M. Memmel, J. H. Grebe]{Christoph Reich, Marius Memmel, Jonas Henry Grebe}
+\department{ETiT, Info}
+\institute{}
+\logo*{\includegraphics{figures/etit.png}}
+\titlegraphic*{%
+\begin{tikzpicture}\draw[white] (-1.35, 0) -- (1.35, 0);\node[opacity=.5] at (0, 0) {\includegraphics[height=1cm]{figures/athene.pdf}};\end{tikzpicture}%
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\setupTUDaFrame{logo=true}
+%%%%%%%%% Intro %%%%%%%%%
+\begin{frame}{Fovea Rendered Video Reconstruction and Super-Resolution}
+\framesubtitle{Problem Setting REDS dataset \cite{REDS}}
+\only<1>{
+\begin{center}
+    \begin{tikzpicture}[>={Stealth[inset=0pt,length=10pt,angle'=45]}]
+        \node[] at (-4.5, 0.5) {\includegraphics[width=1.25cm]{figures/input.png}};
+        \node[] at (-4.6, 0.4) {\includegraphics[width=1.25cm]{figures/input.png}};
+        \node[] at (-4.7, 0.3) {\includegraphics[width=1.25cm]{figures/input.png}};
+        \node[] at (-4.8, 0.2) {\includegraphics[width=1.25cm]{figures/input.png}};
+        \node[] at (-4.9, 0.1) {\includegraphics[width=1.25cm]{figures/input.png}};
+        \node[] at (-5, 0) {\includegraphics[width=1.25cm]{figures/input.png}};
+        \node[] at (-5, 2.75) {Fovea sampled input sequence};
+        \draw[->, very thick, black] (-1.5, 0) -- node[midway, above, text width=3cm] {Reconstruction \& Super-Resolution} (1.0, 0);
+        \node[] at (4.5, 0.5) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.4, 0.4) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.3, 0.3) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.2, 0.2) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.1, 0.1) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.0, 0) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.4, 2.75) {Reconstructed \& upsampled sequence};
+    \end{tikzpicture}
+\end{center}}
+
+\only<2>{
+\begin{center}
+    \begin{tikzpicture}[>={Stealth[inset=0pt,length=10pt,angle'=45]}]
+        \node[] at (-4.5, 0.5) {\includegraphics[width=5cm]{figures/input.png}};
+        \node[] at (-4.6, 0.4) {\includegraphics[width=5cm]{figures/input.png}};
+        \node[] at (-4.7, 0.3) {\includegraphics[width=5cm]{figures/input.png}};
+        \node[] at (-4.8, 0.2) {\includegraphics[width=5cm]{figures/input.png}};
+        \node[] at (-4.9, 0.1) {\includegraphics[width=5cm]{figures/input.png}};
+        \node[] at (-5, 0) {\includegraphics[width=5cm]{figures/input.png}};
+        \node[] at (-5, 2.75) {Fovea sampled input sequence};
+        \draw[->, very thick, black] (-1.5, 0) -- node[midway, above, text width=3cm] {Reconstruction \& Super-Resolution} (1.0, 0);
+        \node[] at (4.5, 0.5) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.4, 0.4) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.3, 0.3) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.2, 0.2) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.1, 0.1) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.0, 0) {\includegraphics[width=5cm]{figures/label.png}};
+        \node[] at (4.4, 2.75) {Reconstructed \& upsampled sequence};
+    \end{tikzpicture}
+\end{center}}
+\end{frame}
+
+%%%%%%%%% Related Work %%%%%%%%%
+
+\begin{frame}{Fovea sample reconstruction}
+\framesubtitle{Related Work}
+\textbf{DeepFovea} - \citet{deepfovea} (Facebook AI)
+\begin{itemize}
+    \item Reconstructions of most plausible peripheral video from small portion of pixels in each frame
+    \item Able to reconstruct video sequences (128 $\times$ 128)
+    \item Recurrent U-Net reconstruction network
+    \item Loss combination (adversarial, perceptual, optical flow)
+\end{itemize}
+\end{frame}
+
+\begin{comment}
+\begin{frame}{Fovea sample reconstruction}
+\framesubtitle{Related Work}
+\textbf{Classic Convolution}
+\begin{itemize}
+    \item Fixed sampling locations
+\end{itemize}
+
+\textbf{Deformable Convolutions}
+\begin{itemize}
+    \item v1: learns offset to original sampling location with seperate traditional convolution \cite{deformableconv1}
+    \item v2: also learns additional modulation mechanism \cite{deformableconv}
+    \item Performance benefits in multiple use cases (e.g. semantic segmentation, object detection)
+\end{itemize}
+\end{frame}
+\end{comment}
+
+\begin{frame}{Video Super-Resolution}
+\framesubtitle{Related Work}
+\textbf{Detail-revealing deep video super-resolution} - \citet{valillasuperres} (\citeyear{valillasuperres})
+\begin{itemize}
+    \item Sub-pixel motion compensation layers (improved frame alignment)
+\end{itemize}
+
+\vspace{0.5cm}
+
+\textbf{Video restoration with enhanced deformable convolutional networks} - \citet{deformablesuperres} (\citeyear{deformablesuperres})
+\begin{itemize}
+    \item Enhanced deformable convolution (frame alignment, temporal and spatial attention)
+\end{itemize}
+
+\vspace{0.5cm}
+
+\pause
+
+\textbf{Additional Work}
+\begin{itemize}
+    \item Video super-resolution with convolutional neural networks - \citet{videosuperrescnn} (\citeyear{videosuperrescnn})
+    \item Video super-resolution via deep draft-ensemble learning - \citet{videosuperresdraft} (\citeyear{videosuperresdraft})
+    \item Dictionary-based multiple frame video super-resolution - \citet{videosuperresdict} (\citeyear{videosuperresdict})
+\end{itemize}
+\end{frame}
+
+%%%%%%%%% Method %%%%%%%%%
+
+\begin{frame}{Reconstruction Model Architecture}
+\framesubtitle{Method}
+\vspace{1cm}
+\begin{figure}[h!]
+    \centering
+    \input{figures/reconstruction_network}
+    \caption{Architecture of the reconstruction network.}
+    \label{fig:reconstructionnetwork}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Training process}
+\framesubtitle{Method}
+\textbf{Loss function}
+\begin{equation}
+    \mathcal{L}=w_{\text{sv}}\,\mathcal{L}_{\text{sv}} + w_{\text{adv}}\,\mathcal{L}_{\text{adv}} + w_{\text{adv fft}}\,\mathcal{L}_{\text{adv fft}} + w_{\text{flow}}\,\mathcal{L}_{\text{flow}} + w_{\text{LPIPS}}\,\mathcal{L}_{\text{LPIPS}}
+\end{equation}
+\pause
+\begin{itemize}
+    \item Supervised loss (general and adaptive robust loss function - \citet{adaptiveroubustloss}) $\quad\mathcal{L}_{\text{sv}}=p(x,\alpha,c)+\log Z(\alpha),\;\; p(x=\sum_{i\in(c\,h\,w)}\hat{\Tensor{I}}-\Tensor{I},\alpha,c)=\frac{\abs{\alpha -2}}{\alpha}\left(\left(\frac{\left(x/c\right)^2}{\abs{\alpha-2}}+1\right)^{(\alpha/2)}-1\right)$
+    \item Adversarial loss \cite{gan} $\quad\quad\,\mathcal{L}_{\text{adv, adv fft}}=-\Mean{\log\left(\operatorname{D}\left(\hat{\Tensor{I}}\right)\right)}$
+    \item Optical flow loss \cite{pwcnet, deepfovea} $\quad\mathcal{L}_{\text{flow}}=\frac{1}{5}\sum_{i=1}^{5}\frac{1}{c_{\text{rgb}}\,h_{i}\,w_{i}}\norm{\hat{\Tensor{I}}_{i}-\operatorname{Warp}\left[\hat{\Tensor{I}}_{i+1}\right]}_{1}$
+    \item Perceptual loss \cite{perceptual} $\quad\quad\;\mathcal{L}_{\text{LPIPS}} = \frac{1}{5}\sum_{i=1}^{5}\frac{1}{b\,c_{i}\,h_{i}\,w_{i}}\norm{\operatorname{VGG}_{i,2}\left(\hat{\Tensor{I}}\right) - \operatorname{VGG}_{i,2}\left(\Tensor{I}\right)}_{1}$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Discriminator Architecture}
+\framesubtitle{Method}
+    \vspace{0.5cm}
+    \begin{figure}
+        \centering
+        \input{figures/discriminator_network}\hspace{1.0cm}\input{figures/fft_discriminator_network}
+        \caption{Discriminator network on the left and FFT discriminator network on the right.}
+        \label{fig:discriminatornetorks}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Dataset and Fovea Sampling}
+\framesubtitle{Method}
+\textbf{REDS dataset} - \citet{REDS}
+\begin{itemize}
+    \item 300 sequences of 100 high-quality natural RGB video frames each
+    \item Resolution 720 $\times$ 1280
+\end{itemize}
+\textbf{Fovea Sampling}
+\begin{itemize}
+    \item Low chance of pixels not being masked out in or closer to focus point
+    \item Higher chance of being masked out moving away from focus point
+    \item Mask generated on downsampled image (relates to approximately 19\% of the information in the low-res image and to \textbf{1.1\%} of pixels compared to the high-res image)
+\end{itemize}
+\end{frame}
+
+%%%%%%%%% Results %%%%%%%%%
+\begin{frame}{Results}
+    \framesubtitle{Qualitative results - with and without reset}
+    \begin{center}
+    \includegraphics[width=0.75\linewidth]{figures/reset/input_220_2020-05-04 11_17_59.593499.png}
+    \includegraphics[width=0.75\linewidth]{figures/reset/prediction_220_2020-05-04 11_17_55.343509.png}
+    \includegraphics[width=0.75\linewidth]{figures/no_rest/prediction_220_2020-05-06 09_57_18.378952.png}
+    \includegraphics[width=0.75\linewidth]{figures/reset/label_220_2020-05-04 11_17_57.695080.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Results}
+    \framesubtitle{Qualitative results - with and without reset}
+    \begin{center}
+    \includegraphics[width=0.75\linewidth]{figures/reset/input_432_2020-05-04 11_19_22.304534.png}
+    \includegraphics[width=0.75\linewidth]{figures/reset/prediction_432_2020-05-04 11_19_18.114088.png}
+    \includegraphics[width=0.75\linewidth]{figures/no_rest/prediction_432_2020-05-06 09_58_40.811600.png}
+    \includegraphics[width=0.75\linewidth]{figures/reset/label_432_2020-05-04 11_19_20.713044.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Results}
+    \framesubtitle{Qualitative results - with and without reset}
+    \begin{center}
+    \includegraphics[width=0.75\linewidth]{figures/reset/input_83_2020-05-04 11_16_57.840082.png}
+    \includegraphics[width=0.75\linewidth]{figures/reset/prediction_83_2020-05-04 11_16_53.597074.png}
+    \includegraphics[width=0.75\linewidth]{figures/no_rest/prediction_83_2020-05-06 09_56_17.234900.png}
+    \includegraphics[width=0.75\linewidth]{figures/reset/label_83_2020-05-04 11_16_55.895397.png}
+    \end{center}
+\end{frame}
+
+
+\begin{frame}{Results}
+    \framesubtitle{Quantitative results}
+    \begin{table}[!htbp]
+    \centering
+    \begin{center}
+        \begin{tabular}{c|c|c|c|c}
+            Reset & $\operatorname{L1}\downarrow$ & $\operatorname{L2}\downarrow$ & Peak signal-to-noise ratio $\operatorname{PSNR}\uparrow$ & Structural similarity $\operatorname{SSIM}\uparrow$ \\ 
+            \hline 
+            \cmark & 0.0701 & 0.0117 & 22.6681 & 0.9116 \\
+            \xmark & {\bf 0.061} & {\bf 0.009} & {\bf 23.8755} & {\bf 0.9290} \\ 
+            \hline 
+        \end{tabular} 
+    \end{center}
+    \end{table}
+    \begin{align*}
+        \operatorname{PSNR}&=10 \log_{10}\left(\frac{\max\left\{\hat{\Tensor{I}}\right\}^2}{\operatorname{L2}\left(\hat{\Tensor{I}}, \Tensor{I}\right)} \right)\\
+        \operatorname{SSIM}&=\frac{4\Mean{\hat{\Tensor{I}}}\Mean{\Tensor{I}}\Cov{\hat{\Tensor{I}}, \Tensor{I}}}{\left(\Mean{\hat{\Tensor{I}}}^2 + \Mean{\Tensor{I}}^2\right)\left(\Var{\hat{\Tensor{I}}} + \Var{\Tensor{I}}\right)}.
+    \end{align*}
+\end{frame}
+
+%%%%%%%%% Conclusion %%%%%%%%%
+
+\begin{frame}{Conclusion and Possible Future Research}
+    \begin{block}{Conclusion}
+    \begin{itemize}
+        \item Solid deep learning baseline to a novel problem
+        \item Good result on the REDS dataset \cite{REDS} which can be used as a benchmark
+        \item Fast inference (reconstruction network 2.3M parameters)
+    \end{itemize}
+    \end{block}
+    \pause
+    \begin{block}{Possible Future Research}
+        \begin{itemize}
+            \item Handle high memory consumption at training time
+            \item Optimize the architecture of the reconstruction network 
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+%%%%%%%%% References %%%%%%%%%
+
+\section{References}
+
+\begin{frame}[allowframebreaks]{References}
+    \bibliographystyle{IEEEtranN}
+    \bibliography{bib}
+\end{frame}
+
+%%%%%%%%% References %%%%%%%%%
+
+\begin{frame}{Code Availability \& Additional Resources}
+    \begin{figure}
+        \centering
+        \includegraphics[width=4cm]{figures/qrcode.eps}\hspace{2.5cm}\includegraphics[width=4cm]{figures/paper.PNG}
+    \end{figure}
+    \begin{center}
+        \begin{large}
+            \url{https://github.com/ChristophReich1996/DeepFoveaPP_for_Video_Reconstruction_and_Super_Resolution}
+        \end{large}
+    \end{center}
+\end{frame}
+
+\end{document}

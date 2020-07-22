@@ -1,0 +1,31 @@
+\begin{tikzpicture}[xscale=0.6, yscale=0.75, every node/.style={scale=0.575}, >={Stealth[inset=0pt,length=2.8pt,angle'=45]}]
+    \begin{scope}[xscale=0.75, yscale=0.8]
+    	\node[rotate=90] at (-0.25, 0.0) {3d video sequence};
+    	\draw[tud1c, thick, ->] (0.0, 0.0) -- (0.5, 0.0);
+        \draw[black, fill=tud0a] (0.5, -3.0) -- (0.5, 3.0) -- (1.5, 2.5) -- (1.5, -2.5) -- (0.5, -3.0);
+        \node[rotate=90] at (1.0, 0.0) {$4 \times 4$ Conv. + downsample};
+    	
+    	\draw[tud1c, thick, ->] (1.5, 0.0) -- (2.5, 0.0);
+    	\draw[black, fill=tud0a] (2.5, -2.5) rectangle++ (1.0, 5.0);
+    	\node[rotate=90] at (3.0, 0.0) {3d res block 1};
+    	
+    	\draw[tud1c, thick, ->] (3.5, 0.0) -- (4.5, 0.0);
+    	\draw[black, fill=tud0a] (4.5, -2.0) rectangle++ (1.0, 4.0);
+    	\node[rotate=90] at (5.0, 0.0) {3d res block 2};
+    	
+    	\draw[tud1c, thick, ->] (5.5, 0.0) -- (6.5, 0.0);
+    	\draw[black, fill=tud0a] (6.5, -1.5) rectangle++ (1.0, 3.0);
+    	\node[rotate=90] at (7.0, 0.0) {\small{3d res block 3}};
+    	
+    	\draw[tud1c, thick, ->] (7.5, 0.0) -- (8.5, 0.0);
+    	\draw[black, fill=tud0a] (8.5, -1.0) rectangle++ (1.0, 2.0);
+    	\node[rotate=90] at (9.0, 0.0) {\tiny{3d res block 4}};
+    
+    	\draw[tud1c, thick, ->] (9.5, 0.0) -- (10.5, 0.0);
+    	\draw[black, fill=tud0a] (10.5, -0.9) rectangle++ (1.0, 1.8);
+    	\node[rotate=90] at (11.0, 0.0) {\tiny{3d res block 5}};
+    	
+    	\draw[tud1c, thick, ->] (11.5, 0.0) -- (12.0, 0.0);
+    	\node[rotate=90] at (12.25, 0.0) {Patch prediction};
+	\end{scope}
+\end{tikzpicture}
