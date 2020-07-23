@@ -56,6 +56,9 @@
 
 \setupTUDaFrame{logo=true}
 %%%%%%%%% Intro %%%%%%%%%
+
+\section{Introduction}
+
 \begin{frame}{Fovea Rendered Video Reconstruction and Super-Resolution}
 \framesubtitle{Problem Setting REDS dataset \cite{REDS}}
 \only<1>{
@@ -103,7 +106,9 @@
 
 %%%%%%%%% Related Work %%%%%%%%%
 
-\begin{frame}{Fovea sample reconstruction}
+\section{Related Work}
+
+\begin{frame}{Fovea Sample Reconstruction}
 \framesubtitle{Related Work}
 \textbf{DeepFovea} - \citet{deepfovea} (Facebook AI)
 \begin{itemize}
@@ -113,23 +118,6 @@
     \item Loss combination (adversarial, perceptual, optical flow)
 \end{itemize}
 \end{frame}
-
-\begin{comment}
-\begin{frame}{Fovea sample reconstruction}
-\framesubtitle{Related Work}
-\textbf{Classic Convolution}
-\begin{itemize}
-    \item Fixed sampling locations
-\end{itemize}
-
-\textbf{Deformable Convolutions}
-\begin{itemize}
-    \item v1: learns offset to original sampling location with seperate traditional convolution \cite{deformableconv1}
-    \item v2: also learns additional modulation mechanism \cite{deformableconv}
-    \item Performance benefits in multiple use cases (e.g. semantic segmentation, object detection)
-\end{itemize}
-\end{frame}
-\end{comment}
 
 \begin{frame}{Video Super-Resolution}
 \framesubtitle{Related Work}
@@ -158,6 +146,8 @@
 \end{frame}
 
 %%%%%%%%% Method %%%%%%%%%
+
+\section{Method}
 
 \begin{frame}{Reconstruction Model Architecture}
 \framesubtitle{Method}
@@ -212,6 +202,9 @@
 \end{frame}
 
 %%%%%%%%% Results %%%%%%%%%
+
+\section{Results}
+
 \begin{frame}{Results}
     \framesubtitle{Qualitative results - with and without reset}
     \begin{center}
@@ -242,7 +235,6 @@
     \end{center}
 \end{frame}
 
-
 \begin{frame}{Results}
     \framesubtitle{Quantitative results}
     \begin{table}[!htbp]
@@ -265,6 +257,8 @@
 
 %%%%%%%%% Conclusion %%%%%%%%%
 
+\section{Conclusion}
+
 \begin{frame}{Conclusion and Possible Future Research}
     \begin{block}{Conclusion}
     \begin{itemize}
@@ -284,14 +278,14 @@
 
 %%%%%%%%% References %%%%%%%%%
 
-\section{References}
-
 \begin{frame}[allowframebreaks]{References}
     \bibliographystyle{IEEEtranN}
     \bibliography{bib}
 \end{frame}
 
-%%%%%%%%% References %%%%%%%%%
+%%%%%%%%% End %%%%%%%%%
+
+\section{End}
 
 \begin{frame}{Code Availability \& Additional Resources}
     \begin{figure}
