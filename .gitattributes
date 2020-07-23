@@ -1,3 +1,9 @@
 *.tex linguist-detectable=false
+DeepFovea++ paper/*.tex linguist-detectable=false
+DeepFovea++ presentation/*.tex linguist-detectable=false
+.sty linguist-detectable=false
+DeepFovea++ paper/*.sty linguist-detectable=false
+DeepFovea++ presentation/*.sty linguist-detectable=false
 *.eps linguist-detectable=false
-*.py linguist-detectable=true
+DeepFovea++ paper/*.eps linguist-detectable=false
+DeepFovea++ presentation/*.eps linguist-detectable=false
