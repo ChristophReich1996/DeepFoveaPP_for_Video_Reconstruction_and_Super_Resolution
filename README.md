@@ -10,6 +10,16 @@ __*Our final paper can be found [here](DeepFovea++%20paper/DeepFovea++.pdf).*__
 ![prediction](images/prediction.png)
 ![label](images/label.png)
 
+## TODO
+
+- [] Add pade acitvation unit implementation
+- [] Prepare YouTube-M8 used in DeepFovea paper
+- [] Adopt implementation to match the repoduce the original DeepFovea
+- [] Run rest with original DeepFovea model
+- [] Implement axial-attention module
+- [] Implement standalone learnable convex upsampling module
+- [] Run first test
+
 ## Model Architecture
 ![reconstructionmodel](images/reconstruction_model.png)
 ![discriminators](images/discriminators.png)
