@@ -533,7 +533,7 @@ class AxialAttention2dBlock(nn.Module):
         return output
 
 
-class ConvexUpsample(nn.Module):
+class ConvexUpsample2d(nn.Module):
     """
     This class implements the 2d convex upsampling operation proposed in:
     https://arxiv.org/pdf/2003.12039.pdf
@@ -548,7 +548,7 @@ class ConvexUpsample(nn.Module):
         :param padding: (Union[int, Tuple[int, int]]) Padding to by applied in unfold operation
         """
         # Call super constructor
-        super(ConvexUpsample, self).__init__()
+        super(ConvexUpsample2d, self).__init__()
         # Save parameters
         self.factor = factor
         self.kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
