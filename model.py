@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from modules.modulated_deform_conv import ModulatedDeformConvPack
-import math
 
 
 class RecurrentUNet(nn.Module):
@@ -511,7 +510,7 @@ class AxialAttention2dBlock(nn.Module):
         # Init final activation
         self.final_activation = activation()
         # Init pooling layer for downscaling the spatial dimensions
-        self.pooling_layer = nn.MaxPool3d(kernel_size=(2, 2), stride=(2, 2)) if downscale else nn.Identity()
+        self.pooling_layer = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)) if downscale else nn.Identity()
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         """
