@@ -198,3 +198,11 @@ We also experimented with loss functions at multiple resolution stages. This, ho
     year={2018}
 }
 ```
+
+```bibtex
+[7] @article{molina2019pad,
+        title={Pad$\backslash$'e Activation Units: End-to-end Learning of Flexible Activation Functions in Deep Networks},
+        author={Molina, Alejandro and Schramowski, Patrick and Kersting, Kristian},
+        journal={arXiv preprint arXiv:1907.06732},
+        year={2019}
+}```
