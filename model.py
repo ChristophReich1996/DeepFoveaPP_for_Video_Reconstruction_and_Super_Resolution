@@ -354,7 +354,7 @@ class AxialAttention2d(AxialAttention3d):
     This class implements the axial attention operation for 2d images.
     """
 
-    def __index__(self, in_channels: int, out_channels: int, dim: int, span: int, groups: int = 8) -> None:
+    def __init__(self, in_channels: int, out_channels: int, dim: int, span: int, groups: int = 8) -> None:
         """
         Constructor method
         :param in_channels: (int) Input channels to be employed
@@ -531,3 +531,5 @@ class AxialAttention2dBlock(nn.Module):
         # Perform final activation
         output = self.final_activation(output)
         return output
+
+
