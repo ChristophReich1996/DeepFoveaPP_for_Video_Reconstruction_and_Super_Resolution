@@ -12,12 +12,13 @@ __*Our final paper can be found [here](DeepFovea++%20paper/DeepFovea++.pdf).*__
 
 ## TODO
 
-- [ ] Add pade acitvation unit implementation
+- [ ] Add pade activation unit implementation
 - [ ] Prepare YouTube-M8 used in DeepFovea paper
-- [ ] Adopt implementation to match the repoduce the original DeepFovea
+- [ ] Adopt implementation to match the reproduce the original DeepFovea
 - [ ] Run rest with original DeepFovea model
 - [ ] Implement axial-attention module
 - [ ] Implement standalone learnable convex upsampling module
+- [ ] Use RAFT for optical flow estimation instead of PWC-Net
 - [ ] Run first test
 
 ## Model Architecture
