@@ -1,9 +1,10 @@
-from typing import Tuple, List
+from typing import Tuple, Union, Type
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from modules.modulated_deform_conv import ModulatedDeformConvPack
+import math
 
 
 class RecurrentUNet(nn.Module):
@@ -381,4 +382,153 @@ class AxialAttention2d(AxialAttention3d):
         output = super().forward(input=input)
         # Reshape output to get desired 2d tensor
         output = output.squeeze(dim=0)
+        return output
+
+
+class AxialAttention3dBlock(nn.Module):
+    """
+    This class implements the axial attention block proposed in:
+    https://arxiv.org/pdf/2003.07853.pdf
+    """
+
+    def __init__(self, in_channels: int, out_channels: int, span: Union[int, Tuple[int, int, int]], groups: int = 4,
+                 normalization: Type = nn.BatchNorm3d, activation: Type = nn.ReLU, downscale: bool = True,
+                 dropout: float = 0.0) -> None:
+        """
+        Constructor method
+        :param in_channels: (int) Input channels to be employed
+        :param out_channels: (int) Output channels to be utilized
+        :param span: (Union[int, Tuple[int, int, int]]) Spans to be used in attention layers
+        :param groups: (int) Multi head attention groups to be used
+        :param normalization: (Type) Type of normalization to be used
+        :param activation: (Type) Type of activation to be utilized
+        :param downscale: (bool) If true spatial dimensions of the output tensor are downscaled by a factor of two
+        :param dropout: (float) Dropout rate to be utilized
+        """
+        # Call super constructor
+        super(AxialAttention3dBlock, self).__init__()
+        # Span to tuple
+        span = span if isinstance(span, tuple) else (span, span, span)
+        # Init input mapping
+        self.input_mapping = nn.Sequential(
+            nn.Conv3d(in_channels=in_channels, out_channels=out_channels,
+                      kernel_size=(3, 3, 3), padding=(1, 1, 1), stride=(1, 1, 1), bias=False),
+            normalization(num_features=out_channels, affine=True, track_running_stats=True),
+            activation()
+        )
+        # Init axial attention mapping
+        self.axial_attention_mapping = nn.Sequential(
+            AxialAttention3d(in_channels=out_channels, out_channels=out_channels, dim=0, span=span[0], groups=groups),
+            AxialAttention3d(in_channels=out_channels, out_channels=out_channels, dim=1, span=span[1], groups=groups),
+            AxialAttention3d(in_channels=out_channels, out_channels=out_channels, dim=2, span=span[2], groups=groups),
+        )
+        # Init dropout layer
+        self.dropout = nn.Dropout(p=dropout, inplace=True)
+        # Init output mapping
+        self.output_mapping = nn.Sequential(
+            nn.Conv3d(in_channels=out_channels, out_channels=out_channels,
+                      kernel_size=(3, 3, 3), padding=(1, 1, 1), stride=(1, 1, 1), bias=False),
+            normalization(num_features=out_channels, affine=True, track_running_stats=True)
+        )
+        # Init residual mapping
+        self.residual_mapping = nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=(1, 1, 1),
+                                          padding=(0, 0, 0), stride=(1, 1, 1),
+                                          bias=False) if in_channels != out_channels else nn.Identity()
+        # Init final activation
+        self.final_activation = activation()
+        # Init pooling layer for downscaling the spatial dimensions
+        self.pooling_layer = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2)) if downscale else nn.Identity()
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass
+        :param input: (torch.Tensor) Input volume tensor of the shape [batch size, in channels, h, w, d]
+        :return: (torch.Tensor) Output volume tensor of the shape [batch size, out channels, h / 2, w / 2, d / 2]
+        """
+        # Perform input mapping
+        output = self.input_mapping(input)
+        # Perform attention
+        output = self.axial_attention_mapping(output)
+        # Perform dropout
+        output = self.dropout(output)
+        # Perform output mapping
+        output = self.output_mapping(self.pooling_layer(output))
+        # Perform residual mapping
+        output = output + self.pooling_layer(self.residual_mapping(input))
+        # Perform final activation
+        output = self.final_activation(output)
+        return output
+
+
+class AxialAttention2dBlock(nn.Module):
+    """
+    This class implements the axial attention block proposed in:
+    https://arxiv.org/pdf/2003.07853.pdf
+    """
+
+    def __init__(self, in_channels: int, out_channels: int, span: Union[int, Tuple[int, int]], groups: int = 4,
+                 normalization: Type = nn.BatchNorm2d, activation: Type = nn.ReLU, downscale: bool = True,
+                 dropout: float = 0.0) -> None:
+        """
+        Constructor method
+        :param in_channels: (int) Input channels to be employed
+        :param out_channels: (int) Output channels to be utilized
+        :param span: (Union[int, Tuple[int, int, int]]) Spans to be used in attention layers
+        :param groups: (int) Multi head attention groups to be used
+        :param normalization: (Type) Type of normalization to be used
+        :param activation: (Type) Type of activation to be utilized
+        :param downscale: (bool) If true spatial dimensions of the output tensor are downscaled by a factor of two
+        :param dropout: (float) Dropout rate to be utilized
+        """
+        # Call super constructor
+        super(AxialAttention2dBlock, self).__init__()
+        # Span to tuple
+        span = span if isinstance(span, tuple) else (span, span)
+        # Init input mapping
+        self.input_mapping = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
+                      kernel_size=(3, 3), padding=(1, 1), stride=(1, 1), bias=False),
+            normalization(num_features=out_channels, affine=True, track_running_stats=True),
+            activation()
+        )
+        # Init axial attention mapping
+        self.axial_attention_mapping = nn.Sequential(
+            AxialAttention2d(in_channels=out_channels, out_channels=out_channels, dim=0, span=span[0], groups=groups),
+            AxialAttention2d(in_channels=out_channels, out_channels=out_channels, dim=1, span=span[1], groups=groups),
+        )
+        # Init dropout layer
+        self.dropout = nn.Dropout(p=dropout, inplace=True)
+        # Init output mapping
+        self.output_mapping = nn.Sequential(
+            nn.Conv2d(in_channels=out_channels, out_channels=out_channels,
+                      kernel_size=(3, 3), padding=(1, 1), stride=(1, 1), bias=False),
+            normalization(num_features=out_channels, affine=True, track_running_stats=True)
+        )
+        # Init residual mapping
+        self.residual_mapping = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(1, 1),
+                                          padding=(0, 0), stride=(1, 1),
+                                          bias=False) if in_channels != out_channels else nn.Identity()
+        # Init final activation
+        self.final_activation = activation()
+        # Init pooling layer for downscaling the spatial dimensions
+        self.pooling_layer = nn.MaxPool3d(kernel_size=(2, 2), stride=(2, 2)) if downscale else nn.Identity()
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass
+        :param input: (torch.Tensor) Input volume tensor of the shape [batch size, in channels, h, w, d]
+        :return: (torch.Tensor) Output volume tensor of the shape [batch size, out channels, h / 2, w / 2, d / 2]
+        """
+        # Perform input mapping
+        output = self.input_mapping(input)
+        # Perform attention
+        output = self.axial_attention_mapping(output)
+        # Perform dropout
+        output = self.dropout(output)
+        # Perform output mapping
+        output = self.output_mapping(self.pooling_layer(output))
+        # Perform residual mapping
+        output = output + self.pooling_layer(self.residual_mapping(input))
+        # Perform final activation
+        output = self.final_activation(output)
         return output
