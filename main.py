@@ -29,7 +29,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from u_net import RecurrentUNet
+from model import RecurrentUNet
 from discriminator import Discriminator, FFTDiscriminator
 from vgg_19 import VGG19
 from pwc_net import PWCNet
