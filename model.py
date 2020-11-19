@@ -533,3 +533,48 @@ class AxialAttention2dBlock(nn.Module):
         return output
 
 
+class ConvexUpsample(nn.Module):
+    """
+    This class implements the 2d convex upsampling operation proposed in:
+    https://arxiv.org/pdf/2003.12039.pdf
+    """
+
+    def __init__(self, factor: int = 2, kernel_size: Union[int, Tuple[int, int]] = (3, 3),
+                 padding: Union[int, Tuple[int, int]] = (1, 1)) -> None:
+        """
+        Constructor method
+        :param factor: (int) Upsampling factor
+        :param kernel_size: (Union[int, Tuple[int, int]]) Convex upsampling kernel size
+        :param padding: (Union[int, Tuple[int, int]]) Padding to by applied in unfold operation
+        """
+        # Call super constructor
+        super(ConvexUpsample, self).__init__()
+        # Save parameters
+        self.factor = factor
+        self.kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
+        self.padding = padding if isinstance(padding, tuple) else (padding, padding)
+
+    def forward(self, input: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass
+        :param input: (torch.Tensor) Input tensor to be upscaled of the shape [batch size, channels, h, w]
+        :param weights: (torch.Tensor) Weights tensor of convex upsampling with shape
+                        [batch size, channels * (kernel size)^2 * factor^2, w, h]
+        :return: (torch.Tensor) Upscaled input tensor of the shape [batch size, channels, 2 * h, 2 * w]
+        """
+        # Save shapes of input tensor
+        batch_size, channels, height, width = input.shape
+        # Unfold input tensor
+        input = F.unfold(input=input, kernel_size=self.kernel_size, padding=self.padding, stride=(1, 1),
+                         dilation=(1, 1))
+        # Reshape unfolded input
+        input = input.reshape(batch_size, channels, self.kernel_size[0] * self.kernel_size[1], 1, 1, height, width)
+        # Reshape weights
+        weights = weights.reshape(batch_size, channels, self.kernel_size[0] * self.kernel_size[1], self.factor,
+                                  self.factor, height, width)
+        # Apply weights
+        output = (weights * input).sum(dim=2)
+        # Reshape output to the desired output resolution
+        output = output.permute(0, 1, 4, 2, 5, 3) \
+            .reshape(batch_size, channels, self.factor * height, self.factor * width)
+        return output
