@@ -12,9 +12,6 @@ RUN ["apt-get", "install", "-y", "curl"]
 RUN ["apt-get", "install", "-y", "git"]
 # Intall tmux
 RUN ["apt-get", "install", "-y", "tmux"]
-# Install older GCC compiler
-RUN ["apt-get", "install", "-y", "gcc-6.3.0"]
-RUN ["apt-get", "install", "-y", "g++-6.3.0"]
 # Intall required python packeges
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
