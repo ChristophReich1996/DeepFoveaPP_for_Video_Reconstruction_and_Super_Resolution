@@ -578,3 +578,14 @@ class ConvexUpsample2d(nn.Module):
         output = output.permute(0, 1, 4, 2, 5, 3) \
             .reshape(batch_size, channels, self.factor * height, self.factor * width)
         return output
+
+
+class StandaloneConvexUpsmapling2d(nn.Module):
+    """
+    This class implements a learnable standalone 2d convex upsamplingoperation.
+    """
+
+    def __init__(self, channels: int, factor: int = 2, kernel_size: Union[int, Tuple[int, int]] = (3, 3),
+                 padding: Union[int, Tuple[int, int]] = (1, 1), ) -> None:
+        # Call super constructor
+        super(StandaloneConvexUpsmapling2d, self).__init__()

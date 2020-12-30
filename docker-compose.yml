@@ -1,0 +1,19 @@
+version: '2.3'
+services:
+  crpython:
+    privileged: true
+    container_name: cr_pytorch_container_df
+    image: cr_pytorch_image_df
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /home/ml-stud-creich/datasets:/workspace/datasets
+      - /home/ml-stud-creich/repositories:/workspace/repositories
+    entrypoint: zsh
+    stdin_open: true
+    tty: true
+    runtime: nvidia
+    ipc: host
+    ports:
+      - '16007:16007'
