@@ -15,9 +15,6 @@ RUN ["apt-get", "install", "-y", "tmux"]
 # Intall required python packeges
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-# Install pade activation units
-WORKDIR /workspace/repositories/DeepFoveaPP_for_Video_Reconstruction_and_Super_Resolution/pade_activation_unit/cuda
-RUN python setup.py install
 # Set working directory
 WORKDIR /workspace/repositories
 # Set python path
